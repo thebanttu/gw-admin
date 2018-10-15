@@ -474,7 +474,7 @@ gw_fetch_src()
 {
     local fetch_cmd=
     fetch_cmd='timeout 100 svn co https://svn.kannel.org/gateway/trunk'
-    eval $fetch_cmd
+    eval $fetch_cmd > /dev/null 2>&1
     [ $? -eq 0 ] && {
         echo $(pwd)/trunk
         return
@@ -629,8 +629,7 @@ handle_pkgs()
 # Pkg install error
 # - pkg_install_error
 # Install package (m)
-# - gw_install_pkg
-# - gw_mk_stage
+# - gw_install_pkg# - gw_mk_stage
 # - gw_fetch_src
 # - gw_install_error
 # - gw_install (m)
