@@ -1,0 +1,632 @@
+#!/bin/bash
+
+# Variables
+
+# ---- Needed in check_pkgs
+declare -A os_pkgs=(
+    [debian]='netcat-openbsd|subversion|libxml2-dev|libmariadb-dev|libpcre2-dev'
+    [ubuntu]='netcat-openbsd|subversion|libxml2-dev|libmariadb2|libpcre3-dev'
+    [centos]='nmap-ncat|subversion|libxml2-devel|mariadb-devel|pcre2-devel'
+)
+
+# ---- Needed in gw_install_pkg
+declare -A os_installer=(
+    [Debian]='apt-get install -y'
+    [Centos]='yum install -y'
+    [Ubuntu]='apt install -y'
+)
+
+# ---- Needed in gw_pkg_check
+declare -A os_chk=(
+    [Debian]='dpkg --status'
+    [Centos]='rpm -q'
+    [Ubuntu]='dpkg --status'
+)
+
+# ---- Needed in box_os_detect
+declare -A detect_stings=(
+    [debian]=debian
+    [centos]=centos
+    [ubuntu]=ubuntu
+)
+
+# ---- Some Regexes
+declare -A box_regexes=(
+    [aux_box]='\<(sql|(open)?smpp)box\>'
+    [main_box]='\<(bearer|sms)box\>'
+    [smsbox]='\<smsbox\>'
+)
+# ---- Workspace Directory
+INST=/tmp/kannel
+
+# ---- Gateway Directory
+GW_DIR=/opt/gw/kannel
+
+# ---- Home of the boxes
+BINDIR=$GW_DIR/sbin
+
+# ---- Daemonizer numero uno
+START_STOP_DAEMON=start-stop-daemon
+
+# ---- Them boxes
+BBOX=bearerbox SMSBOX=smsbox SQLBOX=sqlbox SMPPBOX=opensmppbox
+
+# ---- The Almighty Configs
+CONF_GROUP=testing GW_CONF=/etc/kannel/$CONF_GROUP/kannel.conf
+SQLBOX_CONF= SMPPBOX_CONF=
+
+# ---- PID and stuff
+RUNDIR=/var/run/kannel
+
+# ---- Your children shall belong to
+GW_USER=kannel
+
+# ---- Logging and stuff
+LOG_PREFIX=/var/log/kannel LOGDIR=$LOG_PREFIX/$CONF_GROUP
+
+# ---- Localhost
+LHOST=127.0.0.1
+
+# Sanity Check(s)
+
+# -----< Begin sanity checks. >----- #
+
+# Sanity Check TODOS:
+#   - Is Kannel Installed?
+#       * What OS is this
+#       * Check for availability of Kannel's requisite packages ( hereinafter
+#         referred to as packages ) from OS distro's package manager.
+#       * If packages could not be installed; alert user and exit gracefully.
+#       * If packages were installed proceed with kannel installation.
+#           - create tmp staging area where the source is downloaded.
+#           - compile the source with agreed upon defaults and install.
+#       * If everything succeeds kannel is installed. return success
+
+#   Is the GW where we expect it to be?
+[ -d $BINDIR ] || {
+    echo Gateway directory supplied [ $BINDIR ] does not exist. >&2
+    return 2
+}
+
+#   Are the GW apps there?
+for app in $START_STOP_DAEMON $BBOX $SMSBOX $SQLBOX $SMPPBOX; do
+    [ -x $BINDIR/$app ] || {
+        echo -n $app not found. >&2
+        [[ $app == $BBOX ]] && {
+            echo ' ' $app MUST be present. Exiting. >&2
+            return 3
+        }
+        [[ $app == $SMSBOX ]] && {
+            echo ' ' $app MUST be present. Exiting. >&2
+            return 3
+        }
+        echo
+    }
+done
+
+#   Is GW config available?
+[ -r $GW_CONF ] || {
+    echo Gateway Config NOT found. Exiting. >&2
+    return 4
+}
+
+# -----< End of sanity checks. >----- #
+
+# Prep GW User
+grep -q $GW_USER /etc/passwd
+[ $? -ne 0 ] && {
+    useradd -r $GW_USER 2>/dev/null 
+    [ $? -ne 0 ] && {
+        echo Need permissions to add a user. >&2
+        return 5
+    }
+}
+
+# Prep Log Folder
+[ ! -d $LOGDIR ] && {
+    mkdir -p $LOGDIR
+    chown $GW_USER $LOGDIR 2>/dev/null
+    [ $? -ne 0 ] && {
+        echo Need permissions to change ${LOGDIR}\'s owner. >&2
+        return 5
+    }
+}
+
+# Prep PID dir
+[ -d $RUNDIR ] || {
+    mkdir -p $RUNDIR
+    chown $GW_USER $RUNDIR 2>/dev/null
+    [ $? -ne 0 ] && {
+        echo Need permissions to change ${RUNDIR}\'s owner. >&2
+        return 5
+    }
+}
+
+# start-stop-daemon doc / usage
+# start-stop-daemon for Debian GNU/Linux - small and fast C version written by
+# Marek Michalkiewicz <marekm@i17linuxb.ists.pwr.wroc.pl>, public domain.
+# svn-r5240M
+
+# Usage:
+#   start-stop-daemon -S|--start options ... -- arguments ...
+#   start-stop-daemon -K|--stop options ...
+#   start-stop-daemon -H|--help
+#   start-stop-daemon -V|--version
+
+# Options (at least one of --exec|--pidfile|--user is required):
+#   -x|--exec <executable>        program to start/check if it is running
+#   -p|--pidfile <pid-file>       pid file to check
+#   -c|--chuid <name|uid[:group|gid]>
+#   		change to this user/group before starting process
+#   -u|--user <username>|<uid>    stop processes owned by this user
+#   -n|--name <process-name>      stop processes with this name
+#   -s|--signal <signal>          signal to send (default TERM)
+#   -a|--startas <pathname>       program to start (default is <executable>)
+#   -b|--background               force the process to detach
+#   -m|--make-pidfile             create the pidfile before starting
+#   -t|--test                     test mode, don't do anything
+#   -o|--oknodo                   exit status 0 (not 1) if nothing done
+#   -q|--quiet                    be more quiet
+#   -v|--verbose                  be more verbose
+
+# Exit status:  0 = done  1 = nothing done (=> 0 if --oknodo)  2 = trouble
+
+# Start Box
+box_start()
+{
+    local box= exe= suffix= PIDFILE=
+    box=$(box_args "$@")
+    box_valid $box || return
+    exe=$(box_exec "$@")
+    [[ -z $exe ]] && return 2
+    if [[ $box =~ ${box_regexes[aux_box]} ]]
+    then
+	eval bbox_check_port $exe || return
+        suffix=$(awk -F/ '{print $NF}' <<< "$exe" |\
+		     sed -e 's/\..*//' \
+			 -e 's/'$box'//' \
+			 -e 's/^[^a-zA-Z]*//'
+	      )
+    elif [[ $box =~ ${box_regexes[smsbox]} ]]
+    then
+	eval bbox_check_port $exe || return
+    else
+	:
+    fi
+    PIDFILE=$RUNDIR/$box.pid
+    [[ -n $suffix ]] && PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' \
+        <<< "$PIDFILE")
+    eval $BINDIR/$START_STOP_DAEMON \
+        --start \
+        --exec $exe \
+        --pid $PIDFILE \
+        --make-pidfile \
+        --chuid $GW_USER \
+        --background \
+        --verbose
+}
+
+# Stop Box
+box_stop()
+{
+    local PIDFILE= suffix= save_ifs= box= exe= instance=
+    save_ifs=$IFS
+    box=$(box_args "$@")
+    box_valid $box || return $?
+    exe=$(box_exec_get "$box")
+    [[ -z $exe ]] && return 2
+    # for ((i=$(wc -l <<< "$exe"); i>0; i--)) do
+    IFS=$'\n'
+    PIDFILE=$RUNDIR/$box.pid
+    if [[ $(wc -l <<< "$exe") -gt 1 ]]; then
+        select instance in $exe; do
+            # instance=$(sed -n ${i}p <<< "$exe")
+            suffix=$(awk -F/ '{print $NF}' <<< $instance | sed -e 's/\..*//' \
+                -e "s/$box//" -e 's/^[^a-zA-Z]*//' -e 's/\n//')
+            break
+        done
+    else
+        instance=$exe
+        [[ $box =~ ${box_regexes[aux_box]} ]] && \
+            suffix=$(awk -F/ '{print $NF}' <<< "$exe" | sed -e 's/\..*//' \
+                -e 's/'$box'//' -e 's/^[^a-zA-Z]*//')
+    fi
+    [[ -n $suffix ]] && PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' \
+        <<< "$PIDFILE")
+    eval $BINDIR/$START_STOP_DAEMON \
+        --stop \
+        --exec $instance \
+        --pid $PIDFILE
+    IFS="$save_ifs"
+}
+
+# Get Box Arg
+box_args()
+{
+    [ $# -ne 1 ] && {
+        [ $# -lt 1 ] && {
+            echo I expect to be furnished with a box app. >&2
+            return 2
+        }
+        # TODO: Some color would go a long way in making this a bit tidy
+        # and easier on the eye.
+        echo WARNING: Extra arguments shall be discarded. >&2
+    }
+    echo $1
+}
+
+# Validate Box Arg
+box_valid()
+{
+    local valid_box='\<(bearer|sms|sql|(open)?smpp)box\>'
+    [[ ! $1 =~ $valid_box ]] && {
+        echo Box provided is not valid. >&2
+        return 2
+    }
+    return 0
+}
+
+# Return Exec str
+box_exec()
+{
+    [ $# -ge 1 ] && [ $# -le 2 ] || {
+        echo I only expect 1 or 2 args. >&2
+        return 2
+    }
+    [[ $1 =~ ${box_regexes[main_box]} ]] && { echo "$BINDIR/$1 $GW_CONF"; return; }
+    [[ $1 =~ ${box_regexes[aux_box]} ]] && [[ $# -eq 2 ]] && { echo "$BINDIR/$1 $2"; return; }
+    [ $? -ne 0 ] && {
+        echo You need to provide a path for $1\'s config file >&2
+        return 2
+    }
+}
+
+# Return Exec str of running box
+box_exec_get()
+{
+    # What instances of the arg box are running
+    rbox=$(ps aux | grep $1 | grep -v grep | awk '{print $(NF-1), $NF}')
+    [[ -n $rbox ]] && echo "$rbox" || {
+        echo No Running Boxes were found. >&2
+        return 2
+    }
+}
+
+
+bbox_check_port()
+{
+    local port=
+    grep -q smsbox$ <<< $1
+    [ $? -eq 0 ] && \
+	port=$(grep smsbox-port ${GW_CONF%/*}/core.conf |\
+		   awk '{print $NF}') || \
+	port=$(grep bearerbox-port "$2" | awk '{print $NF}')  
+    [[ -z $port ]] || [[ ! $port =~ ^[[:digit:]]*$ ]] && {
+        echo Can\'t determine bearerbox-port for \""$@"\" >&2
+        return 6
+    }
+    nc -z $LHOST $port
+    [ $? -ne 0 ] && {
+        echo Port Check failed. Port $port has to be open to start this box. >&2
+        return 6
+    }
+    return 0
+}
+
+# Send signal to (b)box
+box_send_signal()
+{
+    local PIDFILE= suffix= save_ifs= box= exe= instance= sig=
+    save_ifs=$IFS
+    sig=$(signal_passed "$@")
+    signal_valid $sig || return $?
+    box=$(box_args "$@")
+    box_valid $box || return $?
+    exe=$(box_exec_get "$box")
+    [[ -z $exe ]] && return 2
+    # for ((i=$(wc -l <<< "$exe"); i>0; i--)) do
+    IFS=$'\n'
+    PIDFILE=$RUNDIR/$box.pid
+    if [[ $(wc -l <<< "$exe") -gt 1 ]]; then
+        select instance in $exe; do
+            # instance=$(sed -n ${i}p <<< "$exe")
+            suffix=$(awk -F/ '{print $NF}' <<< $instance | sed -e 's/\..*//' \
+                -e "s/$box//" -e 's/^[^a-zA-Z]*//' -e 's/\n//')
+            break
+        done
+    else
+        instance=$exe
+        [[ $box =~ ${box_regexes[aux_box]} ]] && \
+            suffix=$(awk -F/ '{print $NF}' <<< "$exe" | sed -e 's/\..*//' \
+                -e 's/'$box'//' -e 's/^[^a-zA-Z]*//')
+    fi
+    [[ -n $suffix ]] && PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' \
+        <<< "$PIDFILE")
+    eval $BINDIR/$START_STOP_DAEMON \
+        --stop \
+        --signal $sig \
+        --exec $instance \
+        --pid $PIDFILE
+    IFS="$save_ifs"
+}
+
+# Return signal passed as argument
+signal_passed()
+{
+    [ $# -ne 2 ] && {
+        [ $# -lt 2 ] && {
+            echo I expect to be furnished with a box app and a signal. >&2
+            return 2
+        }
+        # TODO: Some color would go a long way in making this a bit tidy
+        # and easier on the eye.
+        echo WARNING: Extra arguments shall be discarded. >&2
+    }
+    echo $2
+}
+
+# is signal valid?
+signal_valid()
+{
+    local valid_signal='\<(SIG)?(HUP|STOP|CONT|USR2)\>'
+    [[ ! $1 =~ $valid_signal ]] && {
+        echo Signal provided is not valid. Accepted signals '-> '\
+            HUP STOP CONT and USR2. >&2
+        return 2
+    }
+    return 0
+}
+
+# os detect error
+os_detect_error()
+{
+    echo Could not divine the OS Type, sorry. >&2
+    return 2
+}
+
+# Detect OS
+box_os_detect()
+{
+    local release_str= match=0
+    shopt -s nocasematch
+    release_str=$( \
+                    cat /etc/centos-release 2>/dev/null || \
+                    cat /etc/issue.net 2>/dev/null \
+    )
+    [[  -z $release_str ]] && os_detect_error
+    for os in "${!detect_stings[@]}"; do
+        [[ $release_str =~ ${detect_stings[$os]} ]] && \
+            echo $(sed 's/\(.\)\(.*\)/\u\1\2/' <<< $os) && \
+            (( match++ )) && break
+    done
+    [ $match -eq 0 ] && os_detect_error
+    shopt -u nocasematch
+}
+
+# pkg check error
+pkg_check_error()
+{
+    echo Package not installed. >&2
+    return 2
+}
+
+# Is package installed
+gw_pkg_check()
+{
+    local os=
+    os=$(sed 's/\([[:alpha:]]\)\([[:alpha:]]*\)/\u\1\L\2/' <<< $1)
+    [ $# -ne 2 ] && {
+        echo Usage: $0 os pkg >&2
+        return 2
+    }
+    eval ${os_chk[$os]} $2 > /dev/null 2>&1 && {
+        echo Package found. >&2
+        return
+    }
+    pkg_check_error
+}
+
+# pkg install error
+pkg_install_error()
+{
+    echo Something went awry. >&2
+    echo It happened while running $@ >&2
+    return 2
+}
+
+# install package
+gw_install_pkg()
+{
+    local os=  
+    [ $# -le 0 ] && {
+        echo Usage: $0 os pkg >&2
+        return 2
+    }
+    os=$1; shift
+    inst_cmd="${os_installer[$os]} $*"
+    eval $inst_cmd > /dev/null 2>&1 && {
+        echo Package\(s\) $* installed successfully. >&2
+        return
+    }
+    pkg_install_error $inst_cmd
+}
+
+gw_mk_stage()
+{
+    if test -d $INST; then
+        return
+    else
+        mkdir -p $INST 2>/dev/null
+        [ $? -eq 0 ] && return
+        echo Install staging area could not be created, \
+            permissions maybe? >&2
+        return 2
+    fi
+}
+
+gw_fetch_src()
+{
+    local fetch_cmd=
+    fetch_cmd='timeout 100 svn co https://svn.kannel.org/gateway/trunk'
+    eval $fetch_cmd
+    [ $? -eq 0 ] && {
+        echo $(pwd)/trunk
+        return
+    } || {
+        echo Something went wrong while fetching src. \
+            Please check '->' $fetch_cmd >&2
+            return 2
+    }
+}
+
+gw_install_error()
+{
+    local box=Gateway
+    [ $# -gt 0 ] && box="$1"
+    echo Encountered an error installing $box. >&2
+    return 2
+}
+
+gw_install()
+{
+    local src_dir=
+    echo Expect lots of text to scroll by as gateway compiles. >&2
+    echo ----------------------------------------------------- >&2
+    gw_mk_stage || return
+    src_dir=$(gw_fetch_src)
+    [ -z $src_dir ] && return 2
+    cd "$src_dir"
+    sh bootstrap.sh
+    sh configure --prefix=$GW_DIR --enable-pcre \
+        --enable-start-stop-daemon --with-mysql
+    [ $? -eq 0 ] && { [ -f .depend ] || touch .depend; } && \
+        { make depend && make && make install; } || gw_install_error
+    [ $? -eq 0 ] && {
+        echo Gateway Installed successfully >&2
+        return
+    }
+    return 2
+}
+
+sqlbox_install()
+{
+    local src_dir=$INST/trunk/addons/sqlbox
+    echo Expect some text to scroll by as gateway compiles. >&2
+    echo ----------------------------------------------------- >&2
+    gw_mk_stage || return
+    cd $src_dir || {
+        echo Cannot find source \[ $src_dir \]. Aborting. >&2
+        return 2
+    }
+    sh bootstrap.sh
+    sh configure --prefix=$GW_DIR --with-kannel-dir=$GW_DIR
+    [ $? -eq 0 ] && { make && make install; } || gw_install_error sqlbox
+    [ $? -eq 0 ] && {
+        echo Sqlbox Installed successfully >&2
+        return
+    }
+    return 2
+}
+
+smppbox_install()
+{
+    local src_dir=$INST/trunk/addons/opensmppbox
+    echo Expect some text to scroll by as gateway compiles. >&2
+    echo ----------------------------------------------------- >&2
+    gw_mk_stage || return
+    cd $src_dir || {
+        echo Cannot find source \[ $src_dir \]. Aborting. >&2
+        return 2
+    }
+    sh bootstrap.sh
+    sh configure --prefix=$GW_DIR --with-kannel-dir=$GW_DIR
+    [ $? -eq 0 ] && { make && make install; } || gw_install_error opensmppbox
+    [ $? -eq 0 ] && {
+        echo Opensmppbox Installed successfully >&2
+        return
+    }
+    return 2
+}
+
+check_pkgs()
+{
+    local os= save_ifs=
+    save_ifs="$IFS"
+    os=$(tr '[[:upper:]]' '[[:lower:]]' <<< $(box_os_detect))
+    declare -a missing_pkgs
+    IFS='|'
+    for pkg in ${os_pkgs[$os]}; do
+        echo
+        echo Checking Pkg '->' $pkg >&2
+        gw_pkg_check $os $pkg
+        [ $? -ne 0 ] && {
+            missing_pkgs+=( $pkg )
+            echo Oops! Package $pkg was not found. >&2
+            declare -p missing_pkgs
+            return 2
+        }
+    done
+    echo You\'re all set. >&2
+    IFS="$save_ifs";return
+}
+
+handle_pkgs()
+{
+    eval $(check_pkgs)
+    for pkg in ${!missing_pkgs[@]}; do
+        gw_install_pkg $(box_os_detect) ${missing_pkgs[$pkg]}
+    done
+}
+
+# Main Vocab
+
+# Start Box (m)
+# Stop Box (m)
+# Send signal to (b)box (m)
+# Detect OS (m)
+# Is package installed (m)
+# Install package (m)
+# - gw_install (m)
+# - sqlbox_install (m)
+# - smppbox_install (m)
+
+# Story
+# Verbs
+
+# Start Box (m)
+# - box_start
+# Stop Box (m)
+# - box_stop
+# Get Box Arg
+# - box_args
+# Validate Box Arg
+# - box_valid
+# Return Exec str
+# - box_exec
+# Return Exec str of running box
+# - box_exec_get
+# - bbox_check_port
+# Send signal to (b)box (m)
+# - box_send_signal
+# Return signal passed as argument
+# - signal_passed
+# Is signal valid?
+# - signal_valid
+# Os detect error
+# - os_detect_error
+# Detect OS (m)
+# - box_os_detect
+# Pkg check error
+# - pkg_check_error
+# Is package installed (m)
+# - gw_pkg_check
+# Pkg install error
+# - pkg_install_error
+# Install package (m)
+# - gw_install_pkg
+# - gw_mk_stage
+# - gw_fetch_src
+# - gw_install_error
+# - gw_install (m)
+# - sqlbox_install (m)
+# - smppbox_install (m)
