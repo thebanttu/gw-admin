@@ -83,31 +83,37 @@ LHOST=127.0.0.1
 #       * If everything succeeds kannel is installed. return success
 
 #   Is the GW where we expect it to be?
-[ -d $BINDIR ] || {
-    echo Gateway directory supplied [ $BINDIR ] does not exist. >&2
-    return 2
+check_bindir() {
+    [ -d $BINDIR ] || {
+	echo Gateway directory supplied [ $BINDIR ] does not exist. >&2
+	return 2
+    }
 }
 
 #   Are the GW apps there?
-for app in $START_STOP_DAEMON $BBOX $SMSBOX $SQLBOX $SMPPBOX; do
-    [ -x $BINDIR/$app ] || {
-        echo -n $app not found. >&2
-        [[ $app == $BBOX ]] && {
-            echo ' ' $app MUST be present. Exiting. >&2
-            return 3
-        }
-        [[ $app == $SMSBOX ]] && {
-            echo ' ' $app MUST be present. Exiting. >&2
-            return 3
-        }
-        echo
-    }
-done
+check_gw_apps() {
+    for app in $START_STOP_DAEMON $BBOX $SMSBOX $SQLBOX $SMPPBOX; do
+	[ -x $BINDIR/$app ] || {
+            echo -n $app not found. >&2
+            [[ $app == $BBOX ]] && {
+		echo ' ' $app MUST be present. Exiting. >&2
+		return 3
+            }
+            [[ $app == $SMSBOX ]] && {
+		echo ' ' $app MUST be present. Exiting. >&2
+		return 3
+            }
+            echo
+	}
+    done
+}
 
 #   Is GW config available?
-[ -r $GW_CONF ] || {
-    echo Gateway Config NOT found. Exiting. >&2
-    return 4
+check_gw_conf() {
+    [ -r $GW_CONF ] || {
+	echo Gateway Config NOT found. Exiting. >&2
+	return 4
+    }
 }
 
 # -----< End of sanity checks. >----- #
