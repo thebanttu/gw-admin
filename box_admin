@@ -566,6 +566,7 @@ check_pkgs()
     save_ifs="$IFS"
     os=$(tr '[[:upper:]]' '[[:lower:]]' <<< $(box_os_detect))    
     IFS='|'
+    unset -v missing_pkgs
     for pkg in ${os_pkgs[$os]}; do
         echo
         echo Checking Pkg '->' $pkg >&2
