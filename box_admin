@@ -8,6 +8,8 @@ declare -A os_pkgs=(
     [ubuntu]='netcat-openbsd|subversion|libxml2-dev|libmariadb2|libpcre3-dev'
     [centos]='nmap-ncat|subversion|libxml2-devel|mariadb-devel|pcre2-devel'
 )
+# ---- Needed in check_pkgs
+declare -a missing_pkgs
 
 # ---- Needed in gw_install_pkg
 declare -A os_installer=(
@@ -562,22 +564,24 @@ check_pkgs()
 {
     local os= save_ifs=
     save_ifs="$IFS"
-    os=$(tr '[[:upper:]]' '[[:lower:]]' <<< $(box_os_detect))
-    declare -a missing_pkgs
+    os=$(tr '[[:upper:]]' '[[:lower:]]' <<< $(box_os_detect))    
     IFS='|'
     for pkg in ${os_pkgs[$os]}; do
         echo
         echo Checking Pkg '->' $pkg >&2
         gw_pkg_check $os $pkg
         [ $? -ne 0 ] && {
-            missing_pkgs+=( $pkg )
             echo Oops! Package $pkg was not found. >&2
+	    missing_pkgs+=( $pkg )
             declare -p missing_pkgs
             return 2
         }
     done
-    echo You\'re all set. >&2
-    IFS="$save_ifs";return
+    echo Package check complete. >&2
+    [[ ${#missing_pkgs} -gt 0 ]] && {
+	echo ${#missing_pkgs} packages found missing. >&2
+    }
+    IFS="$save_ifs"
 }
 
 handle_pkgs()
