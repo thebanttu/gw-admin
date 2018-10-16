@@ -592,6 +592,12 @@ handle_pkgs()
     done
 }
 
+install_gw()
+{
+    handle_pkgs
+    gw_install
+}
+
 # Main Vocab
 
 # Start Box (m)
