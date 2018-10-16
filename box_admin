@@ -502,6 +502,7 @@ gw_install()
     echo ----------------------------------------------------- >&2
     gw_mk_stage || return
     pushd $INST
+    [ -d ./trunk ] && rm -rf ./trunk
     src_dir=$(gw_fetch_src)
     [ -z $src_dir ] && return 2
     pushd "$src_dir"
