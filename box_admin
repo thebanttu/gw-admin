@@ -505,8 +505,10 @@ gw_install()
     sh bootstrap.sh
     sh configure --prefix=$GW_DIR --enable-pcre \
         --enable-start-stop-daemon --with-mysql
-    [ $? -eq 0 ] && { [ -f .depend ] || touch .depend || :; } && \
-        { make depend && make && make install; } || gw_install_error
+    [ $? -eq 0 ] && {
+	[ -f .depend ] || touch .depend && make depend || :
+    } && \
+        { make && make install; } || gw_install_error
     [ $? -eq 0 ] && {
         echo Gateway Installed successfully >&2
         return
