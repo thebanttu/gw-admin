@@ -596,6 +596,8 @@ install_gw()
 {
     handle_pkgs
     gw_install
+    sqlbox_install
+    smppbox_install
 }
 
 # Main Vocab
