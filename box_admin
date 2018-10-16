@@ -577,8 +577,8 @@ check_pkgs()
     done
     declare -p missing_pkgs
     echo Package check complete. >&2
-    [[ ${#missing_pkgs} -gt 0 ]] && {
-	echo ${#missing_pkgs} packages found missing. >&2
+    [[ ${#missing_pkgs[@]} -gt 0 ]] && {
+	echo ${#missing_pkgs[@]} packages found missing. >&2
     }
     IFS="$save_ifs"
 }
