@@ -572,11 +572,10 @@ check_pkgs()
         gw_pkg_check $os $pkg
         [ $? -ne 0 ] && {
             echo Oops! Package $pkg was not found. >&2
-	    missing_pkgs+=( $pkg )
-            declare -p missing_pkgs
-            return 2
+	    missing_pkgs+=( $pkg )            
         }
     done
+    declare -p missing_pkgs
     echo Package check complete. >&2
     [[ ${#missing_pkgs} -gt 0 ]] && {
 	echo ${#missing_pkgs} packages found missing. >&2
