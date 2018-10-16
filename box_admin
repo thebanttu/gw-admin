@@ -521,7 +521,7 @@ gw_install()
 sqlbox_install()
 {
     local src_dir=$INST/trunk/addons/sqlbox
-    echo Expect some text to scroll by as gateway compiles. >&2
+    echo Expect some text to scroll by as sqlbox compiles. >&2
     echo ----------------------------------------------------- >&2
     gw_mk_stage || return
     cd $src_dir || {
@@ -541,7 +541,7 @@ sqlbox_install()
 smppbox_install()
 {
     local src_dir=$INST/trunk/addons/opensmppbox
-    echo Expect some text to scroll by as gateway compiles. >&2
+    echo Expect some text to scroll by as smppbox compiles. >&2
     echo ----------------------------------------------------- >&2
     gw_mk_stage || return
     cd $src_dir || {
