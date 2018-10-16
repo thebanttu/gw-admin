@@ -499,9 +499,10 @@ gw_install()
     echo Expect lots of text to scroll by as gateway compiles. >&2
     echo ----------------------------------------------------- >&2
     gw_mk_stage || return
+    pushd $INST
     src_dir=$(gw_fetch_src)
     [ -z $src_dir ] && return 2
-    cd "$src_dir"
+    pushd "$src_dir"
     sh bootstrap.sh
     sh configure --prefix=$GW_DIR --enable-pcre \
         --enable-start-stop-daemon --with-mysql
@@ -511,6 +512,7 @@ gw_install()
         { make && make install; } || gw_install_error
     [ $? -eq 0 ] && {
         echo Gateway Installed successfully >&2
+	popd;popd
         return
     }
     return 2
