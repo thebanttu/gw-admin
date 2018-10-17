@@ -644,7 +644,7 @@ prep_config_target()
     local conf_dir=
     conf_dir=$(dirname $GW_CONF)
     [ -d $conf_dir ] || mkdir -p $conf_dir
-    pwd
+    echo $conf_dir
 }
 
 launch_config()
