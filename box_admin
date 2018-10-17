@@ -4,7 +4,12 @@
 
 # ---- Gateway Name
 GW_NAME=
-get_gw_name
+printf "Please provide the gateway name [testing]: " >&2
+read -e GW_NAME
+if [[ ! $GW_NAME =~ ..+ ]]
+then
+    GW_NAME=testing
+fi
 
 # ---- Needed in check_pkgs
 declare -A os_pkgs=(
@@ -639,14 +644,4 @@ launch_config()
 	    echo launch_config requires an argument, the config tarball >&2
     conf_dir=$(prep_config_target)
     tar xC $conf_dir -f $conf_tarball
-}
-
-get_gw_name()
-{
-    printf "Please provide the gateway name [testing]: " >&2
-    read -e GW_NAME
-    if [[ ! $GW_NAME =~ ..+ ]]
-    then
-	GW_NAME=testing
-    fi
 }
