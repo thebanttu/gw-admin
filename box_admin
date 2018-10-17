@@ -595,60 +595,25 @@ handle_pkgs()
 
 install_gw()
 {
+    printf "What name do you desire for your gateway: "
+    read -e CONF_GROUP
     handle_pkgs
     gw_install
     sqlbox_install
     smppbox_install
 }
 
-# Main Vocab
-
-# Start Box (m)
-# Stop Box (m)
-# Send signal to (b)box (m)
-# Detect OS (m)
-# Is package installed (m)
-# Install package (m)
-# - gw_install (m)
-# - sqlbox_install (m)
-# - smppbox_install (m)
-
-# Story
-# Verbs
-
-# Start Box (m)
-# - box_start
-# Stop Box (m)
-# - box_stop
-# Get Box Arg
-# - box_args
-# Validate Box Arg
-# - box_valid
-# Return Exec str
-# - box_exec
-# Return Exec str of running box
-# - box_exec_get
-# - bbox_check_port
-# Send signal to (b)box (m)
-# - box_send_signal
-# Return signal passed as argument
-# - signal_passed
-# Is signal valid?
-# - signal_valid
-# Os detect error
-# - os_detect_error
-# Detect OS (m)
-# - box_os_detect
-# Pkg check error
-# - pkg_check_error
-# Is package installed (m)
-# - gw_pkg_check
-# Pkg install error
-# - pkg_install_error
-# Install package (m)
-# - gw_install_pkg# - gw_mk_stage
-# - gw_fetch_src
-# - gw_install_error
-# - gw_install (m)
-# - sqlbox_install (m)
-# - smppbox_install (m)
+uninstall_gw()
+{
+    local prefix= dirs= box=
+    prefix=$INST/trunk
+    dirs=(. addons/sqlbox addons/smppbox)
+    for dir in ${dirs[@]}
+    do
+	[[ $dir = '.' ]] && box=gateway || \
+		box=$(cut -d/ -f2 <<< $dir)
+	cd $prefix/$dir
+	make unistall && echo $box uninstalled. || \
+		echo $box not found.
+    done    
+}
