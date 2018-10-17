@@ -607,13 +607,15 @@ uninstall_gw()
 {
     local prefix= dirs= box=
     prefix=$INST/trunk
-    dirs=(. addons/sqlbox addons/smppbox)
+    dirs=(. addons/sqlbox addons/opensmppbox)
     for dir in ${dirs[@]}
     do
 	[[ $dir = '.' ]] && box=gateway || \
 		box=$(cut -d/ -f2 <<< $dir)
-	cd $prefix/$dir
-	make unistall && echo $box uninstalled. || \
-		echo $box not found.
+	[[ -d $prefix/$dir ]] && {
+	    cd $prefix/$dir
+	    make unistall && echo $box uninstalled. || \
+		    echo $box not found.
+	} || echo $box not found.
     done    
 }
