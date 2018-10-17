@@ -63,7 +63,13 @@ START_STOP_DAEMON=start-stop-daemon
 BBOX=bearerbox SMSBOX=smsbox SQLBOX=sqlbox SMPPBOX=opensmppbox
 
 # ---- Config Tarball
-CONF_TARBALL=$(dirname $BASH_SOURCE)/gw_config.tar.gz
+if [[ $(dirname $BASH_SOURCE) = '.' ]]
+then
+    CONF_TARBALL=$(pwd)/gw_config.tar.gz
+elif [[ $(dirname $BASH_SOURCE) =~ ^\..+ ]]
+     CONF_TARBALL=$(pwd)/$(sed 's:^\./::' <<< $(dirname $BASH_SOURCE))
+     CONF_TARBALL=$CONF_TARBALL/gw_config.tar.gz
+fi
 
 # ---- The Almighty Configs
 GW_CONF=/etc/kannel/$GW_NAME/kannel.conf
@@ -643,8 +649,10 @@ prep_config_target()
 launch_config()
 {
     local conf_tarball= conf_dir=
-    [[ $# -gt 0 ]] && [[ -f $1 ]] && conf_tarball=$1 || \
+    [[ $# -gt 0 ]] && [[ -f $1 ]] && conf_tarball=$1 || {
 	    echo launch_config requires an argument, the config tarball >&2
+	    return 2
+	}
     conf_dir=$(prep_config_target)
     tar xC $conf_dir -f $conf_tarball
 }
