@@ -608,7 +608,7 @@ install_gw()
     gw_install
     sqlbox_install
     smppbox_install
-    launch_config
+    launch_config $(dirname $BASH_SOURCE)/gw_config.tar.gz
 }
 
 uninstall_gw()
@@ -622,7 +622,7 @@ uninstall_gw()
 		box=$(cut -d/ -f2 <<< $dir)
 	[[ -d $prefix/$dir ]] && {
 	    cd $prefix/$dir
-	    make unistall > /dev/null 2>&1 && \
+	    make uninstall > /dev/null 2>&1 && \
 		echo $box uninstalled. || \
 		    echo $box not found.
 	} || echo $box not found.
