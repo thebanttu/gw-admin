@@ -67,8 +67,9 @@ if [[ $(dirname $BASH_SOURCE) = '.' ]]
 then
     CONF_TARBALL=$(pwd)/gw_config.tar.gz
 elif [[ $(dirname $BASH_SOURCE) =~ ^\..+ ]]
-     CONF_TARBALL=$(pwd)/$(sed 's:^\./::' <<< $(dirname $BASH_SOURCE))
-     CONF_TARBALL=$CONF_TARBALL/gw_config.tar.gz
+then
+    CONF_TARBALL=$(pwd)/$(sed 's:^\./::' <<< $(dirname $BASH_SOURCE))
+    CONF_TARBALL=$CONF_TARBALL/gw_config.tar.gz
 fi
 
 # ---- The Almighty Configs
@@ -221,15 +222,15 @@ box_start()
     fi
     PIDFILE=$RUNDIR/$box.pid
     [[ -n $suffix ]] && PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' \
-        <<< "$PIDFILE")
+				      <<< "$PIDFILE")
     eval $BINDIR/$START_STOP_DAEMON \
-        --start \
-        --exec $exe \
-        --pid $PIDFILE \
-        --make-pidfile \
-        --chuid $GW_USER \
-        --background \
-        --verbose
+         --start \
+         --exec $exe \
+         --pid $PIDFILE \
+         --make-pidfile \
+         --chuid $GW_USER \
+         --background \
+         --verbose
 }
 
 # Stop Box
@@ -248,21 +249,21 @@ box_stop()
         select instance in $exe; do
             # instance=$(sed -n ${i}p <<< "$exe")
             suffix=$(awk -F/ '{print $NF}' <<< $instance | sed -e 's/\..*//' \
-                -e "s/$box//" -e 's/^[^a-zA-Z]*//' -e 's/\n//')
+							       -e "s/$box//" -e 's/^[^a-zA-Z]*//' -e 's/\n//')
             break
         done
     else
         instance=$exe
         [[ $box =~ ${box_regexes[aux_box]} ]] && \
             suffix=$(awk -F/ '{print $NF}' <<< "$exe" | sed -e 's/\..*//' \
-                -e 's/'$box'//' -e 's/^[^a-zA-Z]*//')
+							    -e 's/'$box'//' -e 's/^[^a-zA-Z]*//')
     fi
     [[ -n $suffix ]] && PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' \
-        <<< "$PIDFILE")
+				      <<< "$PIDFILE")
     eval $BINDIR/$START_STOP_DAEMON \
-        --stop \
-        --exec $instance \
-        --pid $PIDFILE
+         --stop \
+         --exec $instance \
+         --pid $PIDFILE
     IFS="$save_ifs"
 }
 
@@ -313,9 +314,9 @@ box_exec_get()
     # What instances of the arg box are running
     rbox=$(ps aux | grep $1 | grep -v grep | awk '{print $(NF-1), $NF}')
     [[ -n $rbox ]] && echo "$rbox" || {
-        echo No Running Boxes were found. >&2
-        return 2
-    }
+            echo No Running Boxes were found. >&2
+            return 2
+	}
 }
 
 
@@ -326,7 +327,7 @@ bbox_check_port()
     [ $? -eq 0 ] && \
 	port=$(grep smsbox-port ${GW_CONF%/*}/core.conf |\
 		   awk '{print $NF}') || \
-	port=$(grep bearerbox-port "$2" | awk '{print $NF}')  
+	    port=$(grep bearerbox-port "$2" | awk '{print $NF}')  
     [[ -z $port ]] || [[ ! $port =~ ^[[:digit:]]*$ ]] && {
         echo Can\'t determine bearerbox-port for \""$@"\" >&2
         return 6
@@ -357,22 +358,22 @@ box_send_signal()
         select instance in $exe; do
             # instance=$(sed -n ${i}p <<< "$exe")
             suffix=$(awk -F/ '{print $NF}' <<< $instance | sed -e 's/\..*//' \
-                -e "s/$box//" -e 's/^[^a-zA-Z]*//' -e 's/\n//')
+							       -e "s/$box//" -e 's/^[^a-zA-Z]*//' -e 's/\n//')
             break
         done
     else
         instance=$exe
         [[ $box =~ ${box_regexes[aux_box]} ]] && \
             suffix=$(awk -F/ '{print $NF}' <<< "$exe" | sed -e 's/\..*//' \
-                -e 's/'$box'//' -e 's/^[^a-zA-Z]*//')
+							    -e 's/'$box'//' -e 's/^[^a-zA-Z]*//')
     fi
     [[ -n $suffix ]] && PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' \
-        <<< "$PIDFILE")
+				      <<< "$PIDFILE")
     eval $BINDIR/$START_STOP_DAEMON \
-        --stop \
-        --signal $sig \
-        --exec $instance \
-        --pid $PIDFILE
+         --stop \
+         --signal $sig \
+         --exec $instance \
+         --pid $PIDFILE
     IFS="$save_ifs"
 }
 
@@ -397,7 +398,7 @@ signal_valid()
     local valid_signal='\<(SIG)?(HUP|STOP|CONT|USR2)\>'
     [[ ! $1 =~ $valid_signal ]] && {
         echo Signal provided is not valid. Accepted signals '-> '\
-            HUP STOP CONT and USR2. >&2
+             HUP STOP CONT and USR2. >&2
         return 2
     }
     return 0
@@ -416,9 +417,9 @@ box_os_detect()
     local release_str= match=0
     shopt -s nocasematch
     release_str=$( \
-                    cat /etc/centos-release 2>/dev/null || \
-                    cat /etc/issue.net 2>/dev/null \
-    )
+                   cat /etc/centos-release 2>/dev/null || \
+                       cat /etc/issue.net 2>/dev/null \
+	       )
     [[  -z $release_str ]] && os_detect_error
     for os in "${!detect_stings[@]}"; do
         [[ $release_str =~ ${detect_stings[$os]} ]] && \
@@ -485,7 +486,7 @@ gw_mk_stage()
         mkdir -p $INST 2>/dev/null
         [ $? -eq 0 ] && return
         echo Install staging area could not be created, \
-            permissions maybe? >&2
+             permissions maybe? >&2
         return 2
     fi
 }
@@ -500,8 +501,8 @@ gw_fetch_src()
         return
     } || {
         echo Something went wrong while fetching src. \
-            Please check '->' $fetch_cmd >&2
-            return 2
+             Please check '->' $fetch_cmd >&2
+        return 2
     }
 }
 
@@ -526,7 +527,7 @@ gw_install()
     pushd "$src_dir"
     sh bootstrap.sh
     sh configure --prefix=$GW_DIR --enable-pcre \
-        --enable-start-stop-daemon --with-mysql
+       --enable-start-stop-daemon --with-mysql
     [ $? -eq 0 ] && {
 	[ -f .depend ] || touch .depend && make depend || :
     } && \
