@@ -614,7 +614,8 @@ uninstall_gw()
 		box=$(cut -d/ -f2 <<< $dir)
 	[[ -d $prefix/$dir ]] && {
 	    cd $prefix/$dir
-	    make unistall && echo $box uninstalled. || \
+	    make unistall > /dev/null 2>&1 && \
+		echo $box uninstalled. || \
 		    echo $box not found.
 	} || echo $box not found.
     done    
