@@ -2,6 +2,10 @@
 
 # Variables
 
+# ---- Gateway Name
+GW_NAME=
+get_gw_name
+
 # ---- Needed in check_pkgs
 declare -A os_pkgs=(
     [debian]='netcat-openbsd|subversion|libxml2-dev|libmariadb-dev|libpcre2-dev'
@@ -54,7 +58,7 @@ START_STOP_DAEMON=start-stop-daemon
 BBOX=bearerbox SMSBOX=smsbox SQLBOX=sqlbox SMPPBOX=opensmppbox
 
 # ---- The Almighty Configs
-CONF_GROUP=testing GW_CONF=/etc/kannel/$CONF_GROUP/kannel.conf
+GW_CONF=/etc/kannel/$GW_NAME/kannel.conf
 SQLBOX_CONF= SMPPBOX_CONF=
 
 # ---- PID and stuff
@@ -64,7 +68,7 @@ RUNDIR=/var/run/kannel
 GW_USER=kannel
 
 # ---- Logging and stuff
-LOG_PREFIX=/var/log/kannel LOGDIR=$LOG_PREFIX/$CONF_GROUP
+LOG_PREFIX=/var/log/kannel LOGDIR=$LOG_PREFIX/$GW_NAME
 
 # ---- Localhost
 LHOST=127.0.0.1
@@ -595,12 +599,11 @@ handle_pkgs()
 
 install_gw()
 {
-    printf "What name do you desire for your gateway: "
-    read -e CONF_GROUP
     handle_pkgs
     gw_install
     sqlbox_install
     smppbox_install
+    launch_config
 }
 
 uninstall_gw()
@@ -619,4 +622,31 @@ uninstall_gw()
 		    echo $box not found.
 	} || echo $box not found.
     done    
+}
+
+prep_config_target()
+{
+    local conf_dir=
+    conf_dir=$(dirname $GW_CONF)
+    [ -d $conf_dir ] || mkdir -p $conf_dir
+    pwd
+}
+
+launch_config()
+{
+    local conf_tarball= conf_dir=
+    [[ $# -gt 0 ]] && [[ -f $1 ]] && conf_tarball=$1 || \
+	    echo launch_config requires an argument, the config tarball >&2
+    conf_dir=$(prep_config_target)
+    tar xC $conf_dir -f $conf_tarball
+}
+
+get_gw_name()
+{
+    printf "Please provide the gateway name [testing]: " >&2
+    read -e GW_NAME
+    if [[ ! $GW_NAME =~ ..+ ]]
+    then
+	GW_NAME=testing
+    fi
 }
