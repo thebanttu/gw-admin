@@ -5,14 +5,15 @@
    Start smsbox
    Start other boxes
 
+
 ** Bugfixes
    SMSbox needs bearerbox to be running for it to start. Check for this.
 
 ** Prompt user for gateway name. This name shall be used as the prefix for
    the log folder, and the spool folder.
 
-** Create and curate a default config folder that shall hold the default
-   configuration structure that shall be employed for the initial install of the
+** Create and curate a default config folder.
+   This shall hold the default configuration structure that shall be employed for the initial install of the
    gateway.
 
 ** Sql prep script for setting up a gateway database connection and preparing the
@@ -24,10 +25,6 @@
    change all the relevant paths that need changing in the config folder.
 
 ** Do a safaricom script for terminating Safaricom messages.
-
-
-** Write app to send batch messages using the mtbatch utility.
-
 
 * Tests
 
@@ -43,6 +40,9 @@
 # When killing an aux box check if there are multiple instances and 
   if they are present the user with a select list to select the box
   to stop.
+
+
+** Write app to send batch messages using the mtbatch utility.
 
 ** Verify config files according to the following rules:
     - Auxillary Boxes must have an alphanumeric suffix ie

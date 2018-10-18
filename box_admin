@@ -656,4 +656,22 @@ launch_config()
 	}
     conf_dir=$(prep_config_target)
     tar xC $conf_dir -f $conf_tarball
+    edit_config_dir $conf_dir
+}
+
+edit_config_dir()
+{
+    local conf_dir=
+    { [[ $# -le 0 ]] || [[ ! -d $1 ]]; } && {
+	echo edit_config_dir requires an argument, a valid config dir >&2
+	return 2
+    } || {
+	conf_dir=$1
+    }
+    vim -Eq <(grep -nir '/testing/' $conf_dir) <<-ZZ
+set autowrite
+cfdo %s!/testing/!/$GW_NAME/!g
+wqa
+ZZ
+    # Something else
 }
