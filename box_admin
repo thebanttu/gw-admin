@@ -661,17 +661,21 @@ launch_config()
 
 edit_config_dir()
 {
-    local conf_dir=
+    local conf_dir= search=
     { [[ $# -le 0 ]] || [[ ! -d $1 ]]; } && {
-	echo edit_config_dir requires an argument, a valid config dir >&2
+	echo edit_config_dir requires an argument, a valid config dir \
+	     An optional 2nd argument can be supplied, this shall be \
+	     used as the search word. >&2
 	return 2
     } || {
+	[[ -n $2 ]] &&  search=$2 || search=testing
 	conf_dir=$1
     }
-    vim -Eq <(grep -nir '/testing/' $conf_dir) <<-ZZ
-set autowrite
-cfdo %s!/testing/!/$GW_NAME/!g
-wqa
-ZZ
-    # Something else
+    grep \
+	-lri \
+	--exclude=.[^.]* \
+	$search \
+	$conf_dir |\
+	xargs \
+	    sed -i "s:"\\"(/"\\")$search"\\"(/"\\"):"\\"1$GW_NAME"\\"2:g"
 }
