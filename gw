@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Gateway admin script
+#
+# Tools to do routine stuff with the Kannel Gateway.
+# |-_-|
+
+. box_admin
+
+# Wrapper Scripts
+# startbbox, startsmsbox, startsqlbox
+
+startbbox()
+{
+    local store_type=
+    # Validate dlr store directive
+    store_type=$(check_dlr_storage)
+}

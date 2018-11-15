@@ -47,6 +47,15 @@ declare -A box_regexes=(
     [main_box]='\<(bearer|sms)box\>'
     [smsbox]='\<smsbox\>'
 )
+
+# ---- Used when checking mysql dlr storage and sqlbox connectivity to DB
+declare -A db_credetials=(
+    [host]=
+    [port]=
+    [username]=
+    [password]=
+)
+
 # ---- Workspace Directory
 INST=/tmp/kannel
 
@@ -678,4 +687,191 @@ edit_config_dir()
 	$conf_dir |\
 	xargs \
 	    sed -i "s:"\\"(/"\\")$search"\\"(/"\\"):"\\"1$GW_NAME"\\"2:g"
+}
+
+check_dlr_storage()
+{
+    local core= store_type=
+    core=$(dirname $GW_CONF)/core.conf
+    store_type=$(awk '/dlr-storage/{print $NF}' $core)
+    echo $store_type
+}
+
+disable_external_dlr_storage()
+{
+    local tmp_cfg=
+    tmp_cfg=/tmp/kannel_tmp.conf    
+    sed -e \
+	'/dlr-store/s/^[^i]*\(include.*\)/# \1/' \
+	$GW_CONF > $tmp_cfg
+    diff $GW_CONF $tmp_cfg > /dev/null 2>&1
+    [ $? -ne 0 ] && cp -f $tmp_cfg $GW_CONF
+    rm -f $tmp_cfg
+}
+
+enable_external_dlr_storage()
+{
+    local tmp_cfg= storage_type=
+    tmp_cfg=/tmp/kannel_tmp.conf
+    [ $# -gt 0 ] && storage_type=$1 || {
+	    echo Please provide storage type to enable >&2
+	    return 2
+	}
+    disable_external_dlr_storage
+    sed -e \
+	"/dlr-store/{/$storage_type/s/^[^i]"'*\(include.*\)/\1/}' \
+	$GW_CONF > $tmp_cfg
+    diff $GW_CONF $tmp_cfg > /dev/null 2>&1
+    [ $? -ne 0 ] && cp -f $tmp_cfg $GW_CONF
+    rm -f $tmp_cfg
+}
+
+chkp()
+{
+    read -r -d '' <<-"END" USAGE
+		chkp host port
+	END
+    if [ $# -eq 1 ]
+    then
+        nc -z 127.0.0.1 $1 > /dev/null 2>&1
+        return $?
+    elif [ $# -eq 2 ]
+    then
+        nc -z $1 $2 > /dev/null 2>&1
+        return $?
+    else
+        echo "$USAGE"
+    fi
+}
+
+check_mysql_port()
+{
+    local host= port=
+    if [ $# -eq 0 ]
+    then
+	host=$LHOST
+	port=3306
+    elif [ $# -eq 1 ]
+    then
+	host=$1
+	port=3306
+    elif [ $# -ge 2 ]
+    then
+	if [[ $2 =~ ^[[:digit:]]+$ ]]
+	then	
+	    host=$1
+	    port=$2
+	else
+	    echo Port port provided needs to be numeric >&2
+	    return 2
+	fi
+    else
+	echo check_mysql_port host \[ port \] >&2
+	return 2
+    fi
+    chkp $host $port
+}
+
+test_mysql_credentials()
+{ 
+    eval mysqladmin \
+	 -u${db_credentials[user]} \
+	 -p\'${db_credentials[password]}\' \
+	 -h${db_credentials[host]} \
+	 -P${db_credentials[port]} \
+	 > /dev/null 2>&1
+}
+
+dlr_store_file_name()
+{
+    local store_type= file_name=
+    [ $# -ne 1 ] && {
+	echo Usage: dlr_store_file_name store_type >&2
+	return 2
+    } || {
+	store_type=$1
+    }
+    file_name=$(sed -n \
+		    "/External/,/S *M *S/{/$store_type/{p;q}}" \
+		    $GW_CONF |\
+		    awk '{print $NF}'
+	     )
+    [ -z $file_name ] && {
+	echo file not found >&2
+	return 2
+    } || {
+	echo $file_name
+    }
+}
+
+get_conn_file_name()
+{
+    local conf_file= conn_file=
+    [ $# -ne 1 ] && {
+	echo Usage: get_conn_file_name conf_file >&2
+	return 2
+    } || {
+	conf_file=$1
+    }
+    conn_file=$(awk '/include/{print $NF}' $conf_file)
+    [ -z $conn_file ] && {
+	echo connection file not found >&2
+	return 2
+    } || {
+	echo $conn_file
+    }
+}
+
+get_credetials()
+{
+    local conn_file=
+    [ $# -ne 1 ] && {
+	echo Usage: get_credentials conn_file >&2
+	return 2
+    } || {
+	conn_file=$1
+    }
+    grep -q 'group = mysql-connection' $conn_file
+    [ $? -eq 0 ] && {
+	for key in ${!db_credetials[@]}
+	do
+	    ${db_credentials[$key]}=$(awk "/$key/{print \$NF}" $conn_file)
+	done
+	echo DB Credentials fetched. >&2
+    } || {
+	echo Conf file provided does not contain a mysql-connection \
+	     group definition >&2
+	return 2
+    }
+    return
+}
+
+check_mysql()
+{
+    local conn_file=
+    conn_file=$()
+    get_credentials conn_file
+    
+}
+
+print_error()
+{
+    local code=2 msg=
+    [ $# -lt 1 ] && {
+        printf "print_error error_msg [error_code]\n" >&2
+        return 2
+    }
+    case $# in
+        1)
+            msg=$1
+            ;;
+        2)
+            msg=$1; code=$2
+            ;;
+        *)
+            msg=$1; code=$2
+            ;;
+    esac
+    printf "%s\n" $msg >&2
+    return $code
 }
