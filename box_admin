@@ -447,8 +447,8 @@ gw_fetch_src()
     # fetch_cmd='timeout 100 yes p | svn co
     #                   https://svn.kannel.org/gateway/trunk'
     eval $fetch_cmd > /dev/null 2>&1
-    
     [ $? -eq 0 ] && {
+        tar xzf ${GW_SRC_URL##*/}
         echo $(pwd)/$src_dir
         return
     } || {
