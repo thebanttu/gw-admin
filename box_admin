@@ -592,8 +592,9 @@ install_bison()
 install_gw()
 {
     check_user && check_log_path && check_run_path && \
-        handle_pkgs && gw_install && sqlbox_install && \
-        smppbox_install && launch_config $CONF_TARBALL
+        check_spool && handle_pkgs && gw_install && \
+        sqlbox_install && smppbox_install && \
+        launch_config $CONF_TARBALL
 }
 
 uninstall_gw()
@@ -614,6 +615,7 @@ uninstall_gw()
 	} || echo $box not found.
     done
     rm -rf $INST
+    cd
 }
 
 prep_config_target()
