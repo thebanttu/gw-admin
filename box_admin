@@ -564,10 +564,19 @@ check_pkgs()
 
 handle_pkgs()
 {
+    local os=
+    os=$(box_os_detect)
     eval $(check_pkgs)
     for pkg in ${!missing_pkgs[@]}; do
-        gw_install_pkg $(box_os_detect) ${missing_pkgs[$pkg]}
+        gw_install_pkg $os ${missing_pkgs[$pkg]}
     done
+    [[ $os =~ debian ]] && handle_debian_symlinks
+}
+
+handle_debian_symlinks()
+{
+    ln -s /usr/bin/pcre2-config /usr/bin/pcre-config
+    ln -s /usr/bin/mariadb_config /usr/bin/mysql_config
 }
 
 install_gw()
