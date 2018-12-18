@@ -13,7 +13,7 @@ fi
 
 # ---- Needed in check_pkgs
 declare -A os_pkgs=(
-    [debian]='build-essential|netcat-openbsd|libxml2-dev|libmariadbclient-dev-compat|libpcre3-dev|wget|bison'
+    [debian]='build-essential|netcat-openbsd|libxml2-dev|libmariadbclient-dev-compat|libpcre3-dev|wget'
     [ubuntu]='build-essential|netcat-openbsd|libxml2-dev|libmariadb2|libpcre3-dev|wget'
     [centos]='nmap-ncat|libxml2-devel|mariadb-devel|pcre2-devel|wget'
 )

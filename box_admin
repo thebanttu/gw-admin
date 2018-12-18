@@ -571,12 +571,22 @@ handle_pkgs()
         gw_install_pkg $os ${missing_pkgs[$pkg]}
     done
     [[ $os =~ Debian ]] && handle_debian_symlinks
+    install_bison
 }
 
 handle_debian_symlinks()
 {
     :
     # ln -s /usr/bin/pcre2-config /usr/bin/pcre-config
+}
+
+install_bison()
+{
+    wget https://ftp.gnu.org/gnu/bison/bison-2.7.tar.gz > /dev/null 2>&1
+    tar zxf bison-2.7.tar.gz && cd bison-2.7 && ./configure && make \
+        && make install && cd src 
+    cp bison /usr/local/bin/bison && cp bison /usr/bin/bison 
+    cd .. && cd .. && rm -rf bison-2.7.tar.gz bison-2.7
 }
 
 install_gw()
