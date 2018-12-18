@@ -443,7 +443,7 @@ gw_fetch_src()
     local fetch_cmd= src_dir=
     fetch_cmd="wget $GW_SRC_URL 
                     --no-check-certificate > /dev/null 2>&1"
-    src_dir=${GW_SRC_URL##*/}
+    src_dir=$(sed 's/.tar.*//' <<< ${GW_SRC_URL##*/})
     # fetch_cmd='timeout 100 yes p | svn co
     #                   https://svn.kannel.org/gateway/trunk'
     eval $fetch_cmd > /dev/null 2>&1
@@ -473,9 +473,9 @@ gw_install()
     echo ----------------------------------------------------- >&2
     gw_mk_stage || return
     pushd $INST
-    [ -d ./${GW_SRC_URL##*/} ] && rm -rf ./${GW_SRC_URL##*/}
     src_dir=$(gw_fetch_src)
     [ -z $src_dir ] && return 2
+    [ -d $src_dir ] && rm -rf $src_dir
     pushd "$src_dir"
     sh bootstrap.sh
     sh configure --prefix=$GW_DIR --enable-pcre \
@@ -494,7 +494,9 @@ gw_install()
 
 sqlbox_install()
 {
-    local src_dir=$INST/${GW_SRC_URL##*/}/addons/sqlbox
+    local src_dir= gw_dir=
+    gw_dir=$(sed 's/.tar.*//' <<< ${GW_SRC_URL##*/})
+    src_dir=$INST/$gw_dir/addons/sqlbox
     echo Expect some text to scroll by as sqlbox compiles. >&2
     echo ----------------------------------------------------- >&2
     gw_mk_stage || return
@@ -514,7 +516,9 @@ sqlbox_install()
 
 smppbox_install()
 {
-    local src_dir=$INST/${GW_SRC_URL##*/}/addons/opensmppbox
+    local src_dir= gw_dir=
+    gw_dir=$(sed 's/.tar.*//' <<< ${GW_SRC_URL##*/})
+    src_dir=$INST/$gw_dir/addons/opensmppbox
     echo Expect some text to scroll by as smppbox compiles. >&2
     echo ----------------------------------------------------- >&2
     gw_mk_stage || return
@@ -575,8 +579,9 @@ install_gw()
 
 uninstall_gw()
 {
-    local prefix= dirs= box=
-    prefix=$INST/${GW_SRC_URL##*/}
+    local prefix= dirs= box= gw_dir=
+    gw_dir=$(sed 's/.tar.*//' <<< ${GW_SRC_URL##*/})
+    prefix=$INST/$gw_dir
     dirs=(. addons/sqlbox addons/opensmppbox)
     for dir in ${dirs[@]}
     do
