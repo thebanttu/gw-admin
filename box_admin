@@ -575,7 +575,8 @@ handle_pkgs()
 
 handle_debian_symlinks()
 {
-    ln -s /usr/bin/pcre2-config /usr/bin/pcre-config
+    :
+    # ln -s /usr/bin/pcre2-config /usr/bin/pcre-config
 }
 
 install_gw()
