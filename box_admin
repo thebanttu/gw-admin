@@ -1,102 +1,6 @@
 #!/bin/bash
 
-# Variables
-
-# ---- Gateway Name
-GW_NAME=
-printf "Please provide the gateway name [testing]: " >&2
-read -e GW_NAME
-if [[ ! $GW_NAME =~ ..+ ]]
-then
-    GW_NAME=testing
-fi
-
-# ---- Needed in check_pkgs
-declare -A os_pkgs=(
-    [debian]='netcat-openbsd|subversion|libxml2-dev|libmariadb-dev|libpcre2-dev'
-    [ubuntu]='netcat-openbsd|subversion|libxml2-dev|libmariadb2|libpcre3-dev'
-    [centos]='nmap-ncat|subversion|libxml2-devel|mariadb-devel|pcre2-devel'
-)
-# ---- Needed in check_pkgs
-declare -a missing_pkgs
-
-# ---- Needed in gw_install_pkg
-declare -A os_installer=(
-    [Debian]='apt-get install -y'
-    [Centos]='yum install -y'
-    [Ubuntu]='apt install -y'
-)
-
-# ---- Needed in gw_pkg_check
-declare -A os_chk=(
-    [Debian]='dpkg --status'
-    [Centos]='rpm -q'
-    [Ubuntu]='dpkg --status'
-)
-
-# ---- Needed in box_os_detect
-declare -A detect_stings=(
-    [debian]=debian
-    [centos]=centos
-    [ubuntu]=ubuntu
-)
-
-# ---- Some Regexes
-declare -A box_regexes=(
-    [aux_box]='\<(sql|(open)?smpp)box\>'
-    [main_box]='\<(bearer|sms)box\>'
-    [smsbox]='\<smsbox\>'
-)
-
-# ---- Used when checking mysql dlr storage and sqlbox connectivity to DB
-declare -A db_credetials=(
-    [host]=
-    [port]=
-    [username]=
-    [password]=
-)
-
-# ---- Workspace Directory
-INST=/tmp/kannel
-
-# ---- Gateway Directory
-GW_DIR=/opt/gw/kannel
-
-# ---- Home of the boxes
-BINDIR=$GW_DIR/sbin
-
-# ---- Daemonizer numero uno
-START_STOP_DAEMON=start-stop-daemon
-
-# ---- Them boxes
-BBOX=bearerbox SMSBOX=smsbox SQLBOX=sqlbox SMPPBOX=opensmppbox
-
-# ---- Config Tarball
-if [[ $(dirname $BASH_SOURCE) = '.' ]]
-then
-    CONF_TARBALL=$(pwd)/gw_config.tar.gz
-elif [[ $(dirname $BASH_SOURCE) =~ ^\..+ ]]
-then
-    CONF_TARBALL=$(pwd)/$(sed 's:^\./::' <<< $(dirname $BASH_SOURCE))
-    CONF_TARBALL=$CONF_TARBALL/gw_config.tar.gz
-fi
-
-# ---- The Almighty Configs
-GW_CONF=/etc/kannel/$GW_NAME/kannel.conf
-SQLBOX_CONF= SMPPBOX_CONF=
-
-# ---- PID and stuff
-RUNDIR=/var/run/kannel
-
-# ---- Your children shall belong to
-GW_USER=kannel
-
-# ---- Logging and stuff
-LOG_PREFIX=/var/log/kannel LOGDIR=$LOG_PREFIX/$GW_NAME
-
-# ---- Localhost
-LHOST=127.0.0.1
-
+. gw_vars
 # Sanity Check(s)
 
 # -----< Begin sanity checks. >----- #
@@ -151,7 +55,7 @@ check_gw_conf() {
 # Prep GW User
 grep -q $GW_USER /etc/passwd
 [ $? -ne 0 ] && {
-    useradd -r $GW_USER 2>/dev/null 
+    useradd -r $GW_USER 2>/dev/null
     [ $? -ne 0 ] && {
         echo Need permissions to add a user. >&2
         return 5
@@ -254,21 +158,33 @@ box_stop()
     # for ((i=$(wc -l <<< "$exe"); i>0; i--)) do
     IFS=$'\n'
     PIDFILE=$RUNDIR/$box.pid
-    if [[ $(wc -l <<< "$exe") -gt 1 ]]; then
-        select instance in $exe; do
+    if [[ $(wc -l <<< "$exe") -gt 1 ]]
+    then
+        select instance in $exe
+        do
             # instance=$(sed -n ${i}p <<< "$exe")
-            suffix=$(awk -F/ '{print $NF}' <<< $instance | sed -e 's/\..*//' \
-							       -e "s/$box//" -e 's/^[^a-zA-Z]*//' -e 's/\n//')
+            suffix=$(awk -F/ '{print $NF}' \
+                         <<< $instance |\
+                         sed -e 's/\..*//' \
+                             -e "s/$box//" \
+                             -e 's/^[^a-zA-Z]*//' \
+                             -e 's/\n//'
+                  )
             break
         done
     else
         instance=$exe
         [[ $box =~ ${box_regexes[aux_box]} ]] && \
-            suffix=$(awk -F/ '{print $NF}' <<< "$exe" | sed -e 's/\..*//' \
-							    -e 's/'$box'//' -e 's/^[^a-zA-Z]*//')
+            suffix=$(awk -F/ '{print $NF}' \
+                         <<< "$exe" |\
+                         sed -e 's/\..*//' \
+			     -e 's/'$box'//' \
+                             -e 's/^[^a-zA-Z]*//'
+                  )
     fi
     [[ -n $suffix ]] && PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' \
-				      <<< "$PIDFILE")
+				      <<< "$PIDFILE"
+                               )
     eval $BINDIR/$START_STOP_DAEMON \
          --stop \
          --exec $instance \
@@ -309,8 +225,15 @@ box_exec()
         echo I only expect 1 or 2 args. >&2
         return 2
     }
-    [[ $1 =~ ${box_regexes[main_box]} ]] && { echo "$BINDIR/$1 $GW_CONF"; return; }
-    [[ $1 =~ ${box_regexes[aux_box]} ]] && [[ $# -eq 2 ]] && { echo "$BINDIR/$1 $2"; return; }
+    [[ $1 =~ ${box_regexes[main_box]} ]] && {
+        echo "$BINDIR/$1 $GW_CONF"
+        return
+    }
+    [[ $1 =~ ${box_regexes[aux_box]} ]] && \
+        [[ $# -eq 2 ]] && {
+            echo "$BINDIR/$1 $2"
+            return
+        }
     [ $? -ne 0 ] && {
         echo You need to provide a path for $1\'s config file >&2
         return 2
@@ -333,17 +256,23 @@ bbox_check_port()
 {
     local port=
     grep -q smsbox$ <<< $1
-    [ $? -eq 0 ] && \
+    if [ $? -eq 0 ]
+    then
+        # use value of smsbox-port as port
 	port=$(grep smsbox-port ${GW_CONF%/*}/core.conf |\
-		   awk '{print $NF}') || \
-	    port=$(grep bearerbox-port "$2" | awk '{print $NF}')  
+		   awk '{print $NF}')
+    else
+        # use value of bearerbox-port as port
+	port=$(grep bearerbox-port "$2" | awk '{print $NF}')
+    fi
     [[ -z $port ]] || [[ ! $port =~ ^[[:digit:]]*$ ]] && {
         echo Can\'t determine bearerbox-port for \""$@"\" >&2
         return 6
     }
     nc -z $LHOST $port
     [ $? -ne 0 ] && {
-        echo Port Check failed. Port $port has to be open to start this box. >&2
+        echo Port Check failed. Port $port has to be open to \
+             start this box. >&2
         return 6
     }
     return 0
@@ -366,15 +295,24 @@ box_send_signal()
     if [[ $(wc -l <<< "$exe") -gt 1 ]]; then
         select instance in $exe; do
             # instance=$(sed -n ${i}p <<< "$exe")
-            suffix=$(awk -F/ '{print $NF}' <<< $instance | sed -e 's/\..*//' \
-							       -e "s/$box//" -e 's/^[^a-zA-Z]*//' -e 's/\n//')
+            suffix=$(awk -F/ '{print $NF}' \
+                         <<< $instance |\
+                         sed -e 's/\..*//' \
+			     -e "s/$box//" \
+                             -e 's/^[^a-zA-Z]*//' \
+                             -e 's/\n//'
+                  )
             break
         done
     else
         instance=$exe
         [[ $box =~ ${box_regexes[aux_box]} ]] && \
-            suffix=$(awk -F/ '{print $NF}' <<< "$exe" | sed -e 's/\..*//' \
-							    -e 's/'$box'//' -e 's/^[^a-zA-Z]*//')
+            suffix=$(awk -F/ '{print $NF}' \
+                         <<< "$exe" |\
+                         sed -e 's/\..*//' \
+			     -e 's/'$box'//' \
+                             -e 's/^[^a-zA-Z]*//'
+                  )
     fi
     [[ -n $suffix ]] && PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' \
 				      <<< "$PIDFILE")
@@ -473,7 +411,7 @@ pkg_install_error()
 # install package
 gw_install_pkg()
 {
-    local os=  
+    local os=
     [ $# -le 0 ] && {
         echo Usage: $0 os pkg >&2
         return 2
@@ -502,11 +440,15 @@ gw_mk_stage()
 
 gw_fetch_src()
 {
-    local fetch_cmd=
-    fetch_cmd='timeout 100 yes p | svn co https://svn.kannel.org/gateway/trunk'
+    local fetch_cmd= src_dir=
+    fetch_cmd="wget $GW_SRC_URL > /dev/null 2>&1"
+    src_dir=${GW_SRC_URL##*/}
+    # fetch_cmd='timeout 100 yes p | svn co
+    #                   https://svn.kannel.org/gateway/trunk'
     eval $fetch_cmd > /dev/null 2>&1
+    
     [ $? -eq 0 ] && {
-        echo $(pwd)/trunk
+        echo $(pwd)/$src_dir
         return
     } || {
         echo Something went wrong while fetching src. \
@@ -530,7 +472,7 @@ gw_install()
     echo ----------------------------------------------------- >&2
     gw_mk_stage || return
     pushd $INST
-    [ -d ./trunk ] && rm -rf ./trunk
+    [ -d ./${GW_SRC_URL##*/} ] && rm -rf ./${GW_SRC_URL##*/}
     src_dir=$(gw_fetch_src)
     [ -z $src_dir ] && return 2
     pushd "$src_dir"
@@ -551,7 +493,7 @@ gw_install()
 
 sqlbox_install()
 {
-    local src_dir=$INST/trunk/addons/sqlbox
+    local src_dir=$INST/${GW_SRC_URL##*/}/addons/sqlbox
     echo Expect some text to scroll by as sqlbox compiles. >&2
     echo ----------------------------------------------------- >&2
     gw_mk_stage || return
@@ -571,7 +513,7 @@ sqlbox_install()
 
 smppbox_install()
 {
-    local src_dir=$INST/trunk/addons/opensmppbox
+    local src_dir=$INST/${GW_SRC_URL##*/}/addons/opensmppbox
     echo Expect some text to scroll by as smppbox compiles. >&2
     echo ----------------------------------------------------- >&2
     gw_mk_stage || return
@@ -581,7 +523,9 @@ smppbox_install()
     }
     sh bootstrap.sh
     sh configure --prefix=$GW_DIR --with-kannel-dir=$GW_DIR
-    [ $? -eq 0 ] && { make && make install; } || gw_install_error opensmppbox
+    [ $? -eq 0 ] && {
+        make && make install
+    } || gw_install_error opensmppbox
     [ $? -eq 0 ] && {
         echo Opensmppbox Installed successfully >&2
         return
@@ -593,7 +537,7 @@ check_pkgs()
 {
     local os= save_ifs=
     save_ifs="$IFS"
-    os=$(tr '[[:upper:]]' '[[:lower:]]' <<< $(box_os_detect))    
+    os=$(tr '[[:upper:]]' '[[:lower:]]' <<< $(box_os_detect))
     IFS='|'
     unset -v missing_pkgs
     for pkg in ${os_pkgs[$os]}; do
@@ -602,7 +546,7 @@ check_pkgs()
         gw_pkg_check $os $pkg
         [ $? -ne 0 ] && {
             echo Oops! Package $pkg was not found. >&2
-	    missing_pkgs+=( $pkg )            
+	    missing_pkgs+=( $pkg )
         }
     done
     echo Package check complete. >&2
@@ -623,17 +567,15 @@ handle_pkgs()
 
 install_gw()
 {
-    handle_pkgs
-    gw_install
-    sqlbox_install
-    smppbox_install
-    launch_config $CONF_TARBALL
+    check_user && check_log_path && check_run_path && \
+        handle_pkgs && gw_install && sqlbox_install && \
+        smppbox_install && launch_config $CONF_TARBALL
 }
 
 uninstall_gw()
 {
     local prefix= dirs= box=
-    prefix=$INST/trunk
+    prefix=$INST/${GW_SRC_URL##*/}
     dirs=(. addons/sqlbox addons/opensmppbox)
     for dir in ${dirs[@]}
     do
@@ -645,7 +587,7 @@ uninstall_gw()
 		echo $box uninstalled. || \
 		    echo $box not found.
 	} || echo $box not found.
-    done    
+    done
 }
 
 prep_config_target()
@@ -689,18 +631,27 @@ edit_config_dir()
 	    sed -i "s:"\\"(/"\\")$search"\\"(/"\\"):"\\"1$GW_NAME"\\"2:g"
 }
 
-check_dlr_storage()
+get_store_type()
 {
     local core= store_type=
-    core=$(dirname $GW_CONF)/core.conf
-    store_type=$(awk '/dlr-storage/{print $NF}' $core)
+    core=${GW_CONF%/*}/core.conf
+    store_type=$(awk '/store-type/{print $NF}' $core)
     echo $store_type
+}
+
+
+get_dlr_storage()
+{
+    local core= dlr_store=
+    core=${GW_CONF%/*}/core.conf
+    dlr_store=$(awk '/dlr-storage/{print $NF}' $core)
+    echo $dlr_store
 }
 
 disable_external_dlr_storage()
 {
     local tmp_cfg=
-    tmp_cfg=/tmp/kannel_tmp.conf    
+    tmp_cfg=/tmp/kannel_tmp.conf
     sed -e \
 	'/dlr-store/s/^[^i]*\(include.*\)/# \1/' \
 	$GW_CONF > $tmp_cfg
@@ -744,6 +695,17 @@ chkp()
     fi
 }
 
+check_smsbox_port()
+{
+    local host= port= smsbox_conf_file=
+    smsbox_conf_file=${GW_CONF%/*}/smsbox.conf
+    port=$(awk -F' = ' '/^bearerbox-port/{print $NF}' \
+               $smsbox_conf_file
+        )
+    [ $# -gt 0 ] && host=$1 || host=$LHOST
+    chkp $host $port
+}
+
 check_mysql_port()
 {
     local host= port=
@@ -758,7 +720,7 @@ check_mysql_port()
     elif [ $# -ge 2 ]
     then
 	if [[ $2 =~ ^[[:digit:]]+$ ]]
-	then	
+	then
 	    host=$1
 	    port=$2
 	else
@@ -773,9 +735,9 @@ check_mysql_port()
 }
 
 test_mysql_credentials()
-{ 
-    eval mysqladmin \
-	 -u${db_credentials[user]} \
+{
+    eval mysqladmin status \
+	 -u${db_credentials[username]} \
 	 -p\'${db_credentials[password]}\' \
 	 -h${db_credentials[host]} \
 	 -P${db_credentials[port]} \
@@ -800,7 +762,7 @@ dlr_store_file_name()
 	echo file not found >&2
 	return 2
     } || {
-	echo $file_name
+	eval echo $file_name
     }
 }
 
@@ -818,7 +780,7 @@ get_conn_file_name()
 	echo connection file not found >&2
 	return 2
     } || {
-	echo $conn_file
+	eval echo $conn_file
     }
 }
 
@@ -832,46 +794,271 @@ get_credetials()
 	conn_file=$1
     }
     grep -q 'group = mysql-connection' $conn_file
-    [ $? -eq 0 ] && {
-	for key in ${!db_credetials[@]}
+    if [ $? -eq 0 ]
+    then
+	for key in ${!db_credentials[@]}
 	do
-	    ${db_credentials[$key]}=$(awk "/$key/{print \$NF}" $conn_file)
+            db_credentials[$key]=$(awk -F' = ' \
+                                       "/^$key/{print \$NF}" \
+                                       $conn_file
+                          )
 	done
-	echo DB Credentials fetched. >&2
-    } || {
+        [ $? -ne 0 ] && {
+            echo DB Credentials NOT fetched. >&2
+            return 2
+        }
+    else
 	echo Conf file provided does not contain a mysql-connection \
 	     group definition >&2
 	return 2
-    }
+    fi
     return
+}
+
+check_spool()
+{
+    local core= spool_dir= owner= spool_type= \
+          help=
+    help="Usage: ${FUNCNAME[0]} dlr|store"
+    if [ $# -eq 1 ]
+    then
+        grep -Eq '^(dlr|store)' <<< "$1"
+        if [ $? -eq 0 ]
+        then
+            spool_type=$1
+        else
+            echo $help >&2
+            return 2
+        fi
+    else
+        echo $help >&2
+        return 2
+    fi
+    [[ $spool_type =~ ^dlr ]] && spool_type=dlr-spool || \
+            spool_type=store-location
+    core=${GW_CONF%/*}/core.conf
+    spool_dir=$(eval awk -F\' = \' \
+                     \"/^$spool_type/{print \\\$NF}\" \
+                     $core
+             )
+    [ -z $spool_dir ] && {
+        echo $spool_type is not defined in the config group core.
+        return 2
+    }
+    owner=$(eval stat -c \'%U\' $spool_dir)
+    [ -d $spool_dir ] || {
+        mkdir -p $spool_dir 2>/dev/null
+        [ $? -ne 0 ] && {
+            echo Need permissions to create ${spool_dir}. >&2
+            return 5
+        }
+        eval chown $GW_USER $spool_dir 2>/dev/null
+        [ $? -ne 0 ] && {
+            echo Need permissions to change ${spool_dir}\'s owner. >&2
+            return 5
+        }
+    }
+    [ $owner = $GW_USER ] || {
+        eval chown $GW_USER $spool_dir 2>/dev/null
+        [ $? -ne 0 ] && {
+            echo Need permissions to change ${spool_dir}\'s owner. >&2
+            return 2
+        }
+    }
+    return 0
+}
+
+# This baby checks the key it is passed
+# as an argument and uses it to find an
+# sqlbox configuration file that fuzzy
+# matches the key on either the smsbox-id
+# or the file name. Without an argument
+# the key is main.
+
+get_sqlbox_conf()
+{
+    local number_of_configs= key= rexp= \
+          base=
+    help="Usage: ${FUNCNAME[0]} box_id"
+    case $# in
+        0)
+            key=main
+            base=sqlbox
+            ;;
+        1)
+            key=$1
+            base=sqlbox
+            ;;
+        2)
+            key=$1
+            base=$2
+            ;;
+        *)
+            echo $help >&2
+            return 2
+            ;;
+    esac
+    number_of_configs=$(ls -1 \
+                           ${GW_CONF%/*}/sqlboxes/*conf |\
+                            wc -l
+                     )
+    if [ $number_of_configs -eq 1 ]
+    then
+        echo ${GW_CONF%/*}/sqlboxes/*conf
+        return
+    elif [ $key = 'main' ]
+    then
+        rexp='^smsbox-id.*\<'$base'_?(01|main|)$'
+        grep -El \
+             $rexp \
+             ${GW_CONF%/*}/sqlboxes/*conf |\
+            head -1
+        [ $? -eq 0 ] && return || {
+                echo No Config file was found. Perhaps \
+                     you are not using $base as the root \
+                     of the smsbox-id\'s name. >&2
+                return 2
+            }
+    else
+        rexp='^smsbox-id.*('$base')?_?('$key').*$'
+        grep -El \
+             $rexp \
+             ${GW_CONF%/*}/sqlboxes/*conf |\
+            head -1
+        [ $? -eq 0 ] && return || {
+                echo No Config file was found. Perhaps \
+                     you are not using $base as the root \
+                     of the smsbox-id\'s name. >&2
+                return 2
+            }
+    fi
 }
 
 check_mysql()
 {
-    local conn_file=
-    conn_file=$()
-    get_credentials conn_file
-    
+    local conn_file= conf_file= help=
+    help="Usage: ${FUNCNAME[0]} dlrstore | sqlbox conf_path"
+    { [ $# -eq 0 -o $# -gt 2 ] || [[ ! $1 =~ dlrstore|sqlbox ]]; } && {
+        echo $help >&2
+        return 2
+    }
+    [[ $1 =~ ^sqlbox$ ]] && [ $# -eq 2 ] || {
+        echo $echo >&2
+        return 2
+    }
+    if [ $1 = 'dlrstore' ]
+    then
+        conf_file=$(dlr_store_file_name mysql)
+        conn_file=$(get_conn_file_name $conf_file)
+    else
+        conf_file=$2
+        [ -r $conf_file ] || {
+            echo config file provided is not readable. >&2
+            return 2
+        }
+        conn_file=$(get_conn_file_name $conf_file)
+    fi
+    get_credetials $conn_file
+    check_mysql_port \
+        ${db_credentials[host]} \
+        ${db_credentials[port]}
+    [ $? -ne 0 ] && {
+        print_error "Mysql is not available on "\
+                    ${db_credentials[host]}":"\
+                    ${db_credentials[port]}
+        return
+    }
+    test_mysql_credentials
+    [ $? -ne 0 ] && {
+        print_error "Mysql Credentials are invalid."
+        return
+    }
+    return 0
+}
+
+check_included_paths()
+{
+    local ret=0 conf_file=
+    unset -v paths; declare -a paths
+    if [ $# -ne 1 ]
+    then
+        echo "Usage: ${FUNCNAME[0]} config_file" >&2
+        return 2
+    else
+        conf_file=$1
+    fi
+    while read path
+    do
+        paths+=( $path )
+    done < <(awk -F' = ' \
+                 '/^include/{gsub(/"/,"",$NF);print $NF}' \
+             $conf_file
+            )
+    if [ ${#paths[@]} -gt 0 ]
+    then
+        for path in ${paths[@]}
+        do
+            [ -r $path ] || {
+                echo Cannot read \"$path\", confirm if it is there. >&2
+                ret=2
+                break
+            }
+        done
+    else
+        echo I did not find a single path in \"$conf_file\" >&2
+        ret=2
+    fi
+    # DEBUG
+    # [ $ret -eq 0 ] && \
+    #     echo All paths checks out, ergo all systems go. >&2
+    return $ret
+}
+
+check_user()
+{
+    grep -q $GW_USER /etc/passwd
+    [ $? -ne 0 ] && {
+        useradd -r $GW_USER 2>/dev/null
+        [ $? -ne 0 ] && {
+            echo Need permissions to add a user. >&2
+            return 5
+        }
+    }
+}
+
+check_log_path()
+{
+    [ ! -d $LOGDIR ] && {
+        mkdir -p $LOGDIR
+        chown $GW_USER $LOGDIR 2>/dev/null
+        [ $? -ne 0 ] && {
+            echo Need permissions to change ${LOGDIR}\'s owner. >&2
+            return 5
+        }
+    }
+}
+
+check_run_path()
+{
+    [ -d $RUNDIR ] || {
+        mkdir -p $RUNDIR
+        chown $GW_USER $RUNDIR 2>/dev/null
+        [ $? -ne 0 ] && {
+            echo Need permissions to change ${RUNDIR}\'s owner. >&2
+            return 5
+        }
+    }
 }
 
 print_error()
 {
     local code=2 msg=
     [ $# -lt 1 ] && {
-        printf "print_error error_msg [error_code]\n" >&2
+        printf "print_error error_msg\n" >&2
         return 2
     }
-    case $# in
-        1)
-            msg=$1
-            ;;
-        2)
-            msg=$1; code=$2
-            ;;
-        *)
-            msg=$1; code=$2
-            ;;
-    esac
-    printf "%s\n" $msg >&2
+    msg="$@"
+    printf "%s" "$msg" >&2
+    echo
     return $code
 }

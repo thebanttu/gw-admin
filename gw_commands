@@ -1,0 +1,212 @@
+#!/bin/bash
+
+. gw_vars
+
+BBOX_HOST=$LHOST
+ADMIN_PORT=$(awk -F' = ' \
+                 '/admin-port/{print $NF}' \
+                 ${GW_CONF%/*}/core.conf
+          )
+STATUS_PASSWD=$(awk -F' = ' \
+                 '/status-password/{print $NF}' \
+                 ${GW_CONF%/*}/core.conf
+             )
+ADMIN_PASSWD=$(awk -F' = ' \
+                 '/admin-password/{print $NF}' \
+                 ${GW_CONF%/*}/core.conf
+             )
+ADMIN_URL=http://$BBOX_HOST:$ADMIN_PORT/action?password=$ADMIN_PASSWD
+STATUS_URL=http://$BBOX_HOST:$ADMIN_PORT/action?password=$STATUS_PASSWD
+
+# status
+# store-status
+# log-level
+# shutdown
+# suspend
+# isolate
+# resume
+# restart
+# graceful-restart
+# flush-dlr
+# stop-smsc
+# start-smsc
+# add-smsc
+# remove-smsc
+# reload-lists
+# remove-message
+
+gw_status()
+{
+    local command= url=
+    command=status
+    url=$(sed 's/action/'$command'/' <<< "$STATUS_URL")
+    curl $url
+}
+
+gw_store_status()
+{
+    local command= url=
+    command=store-status
+    url=$(sed 's/action/'$command'/' <<< "$STATUS_URL")
+    curl $url
+}
+
+gw_log_level()
+{
+    local command= url= level=
+    command=log-level    
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    if [ $# -gt 0 ]
+    then
+        level=$1
+        url=$url'&level='$level
+    fi
+    curl $url
+    echo
+}
+
+gw_shutdown()
+{
+    local command= url=
+    command=shutdown
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    curl $url
+    echo
+}
+
+gw_suspend()
+{
+    local command= url=
+    command=suspend
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    curl $url
+    echo
+}
+
+gw_isolate()
+{
+    local command= url=
+    command=isolate
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    curl $url
+    echo
+}
+
+gw_resume()
+{
+    local command= url=
+    command=resume
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    curl $url
+    echo
+}
+
+gw_restart()
+{
+    local command= url=
+    command=restart
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    curl $url
+    echo
+}
+
+gw_graceful_restart()
+{
+    local command= url=
+    command=graceful-restart
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    curl $url
+    echo
+}
+
+gw_flush_dlr()
+{
+    local command= url=
+    command=flush-dlr
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    gw_suspend
+    [ $? -eq 0 ] && curl $url
+    [ $? -eq 0 ] && {
+        echo
+        gw_resume
+    }
+}
+
+gw_stop_smsc()
+{
+    local command= url= smsc=
+    command=stop-smsc    
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    if [ $# -gt 0 ]
+    then
+        smsc=$1
+        url=$url'&smsc='$smsc
+    fi
+    curl $url
+    echo
+}
+
+gw_start_smsc()
+{
+    local command= url= smsc=
+    command=start-smsc    
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    if [ $# -gt 0 ]
+    then
+        smsc=$1
+        url=$url'&smsc='$smsc
+    fi
+    curl $url
+    echo
+}
+
+gw_add_smsc()
+{
+    local command= url= smsc=
+    command=add-smsc    
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    if [ $# -gt 0 ]
+    then
+        smsc=$1
+        url=$url'&smsc='$smsc
+    fi
+    curl $url
+    echo
+}
+
+gw_remove_smsc()
+{
+    local command= url= smsc=
+    command=remove-smsc    
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    if [ $# -gt 0 ]
+    then
+        smsc=$1
+        url=$url'&smsc='$smsc
+    fi
+    curl $url
+    echo
+}
+
+gw_reload_list()
+{
+    local command= url=
+    command=reload-lists
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    curl $url
+    echo
+}
+
+gw_remove_message()
+{
+    local command= url= id=
+    command=remove-message    
+    url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
+    if [ $# -gt 0 ]
+    then
+        id=$1
+        url=$url'&smsc='$smsc
+    fi
+    curl $url
+    echo
+}

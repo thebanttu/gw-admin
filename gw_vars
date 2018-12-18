@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# Variables
+
+# ---- Gateway Name
+GW_NAME=
+printf "Please provide the gateway name [testing]: " >&2
+read -e GW_NAME
+if [[ ! $GW_NAME =~ ..+ ]]
+then
+    GW_NAME=testing
+fi
+
+# ---- Needed in check_pkgs
+declare -A os_pkgs=(
+    [debian]='netcat-openbsd|libxml2-dev|libmariadb-dev|libpcre2-dev|wget'
+    [ubuntu]='netcat-openbsd|libxml2-dev|libmariadb2|libpcre3-dev|wget'
+    [centos]='nmap-ncat|libxml2-devel|mariadb-devel|pcre2-devel|wget'
+)
+# ---- Needed in check_pkgs
+declare -a missing_pkgs
+
+# ---- Needed in gw_install_pkg
+declare -A os_installer=(
+    [Debian]='apt-get install -y'
+    [Centos]='yum install -y'
+    [Ubuntu]='apt install -y'
+)
+
+# ---- Needed in gw_pkg_check
+declare -A os_chk=(
+    [Debian]='dpkg --status'
+    [Centos]='rpm -q'
+    [Ubuntu]='dpkg --status'
+)
+
+# ---- Needed in box_os_detect
+declare -A detect_stings=(
+    [debian]=debian
+    [centos]=centos
+    [ubuntu]=ubuntu
+)
+
+# ---- Some Regexes
+declare -A box_regexes=(
+    [aux_box]='\<(sql|(open)?smpp)box\>'
+    [main_box]='\<(bearer|sms)box\>'
+    [smsbox]='\<smsbox\>'
+)
+
+# ---- Used when checking mysql dlr storage and sqlbox connectivity to DB
+declare -A db_credentials=(
+    [host]=""
+    [port]=""
+    [username]=""
+    [password]=""
+)
+
+# ---- Workspace Directory
+INST=/tmp/kannel
+
+# ---- Gateway Directory
+GW_DIR=/opt/gw/kannel
+
+# ---- Home of the boxes
+BINDIR=$GW_DIR/sbin
+
+# ---- Daemonizer numero uno
+START_STOP_DAEMON=start-stop-daemon
+
+# ---- Them boxes
+BBOX=bearerbox SMSBOX=smsbox SQLBOX=sqlbox SMPPBOX=opensmppbox
+
+# ---- Config Tarball
+if [[ $(dirname $BASH_SOURCE) = '.' ]]
+then
+    CONF_TARBALL=$(pwd)/gw_config.tar.gz
+elif [[ $(dirname $BASH_SOURCE) =~ ^\..+ ]]
+then
+    CONF_TARBALL=$(pwd)/$(sed 's:^\./::' <<< $(dirname $BASH_SOURCE))
+    CONF_TARBALL=$CONF_TARBALL/gw_config.tar.gz
+fi
+
+# ---- The Almighty Configs
+GW_CONF=/etc/kannel/$GW_NAME/kannel.conf
+SQLBOX_CONF= SMPPBOX_CONF=
+
+# ---- PID and stuff
+RUNDIR=/var/run/kannel
+
+# ---- Your children shall belong to
+GW_USER=kannel
+
+# ---- Logging and stuff
+LOG_PREFIX=/var/log/kannel LOGDIR=$LOG_PREFIX/$GW_NAME
+
+# ---- Localhost
+LHOST=127.0.0.1
+
+# ---- Gateway Source URL
+GW_SRC_URL='https://kannel.org/download/1.4.5/gateway-1.4.5.tar.gz'
