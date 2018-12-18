@@ -570,7 +570,7 @@ handle_pkgs()
     for pkg in ${!missing_pkgs[@]}; do
         gw_install_pkg $os ${missing_pkgs[$pkg]}
     done
-    [[ $os =~ debian ]] && handle_debian_symlinks
+    [[ $os =~ Debian ]] && handle_debian_symlinks
 }
 
 handle_debian_symlinks()
