@@ -1047,7 +1047,7 @@ check_user()
     grep -q $GW_USER /etc/passwd
     [ $? -eq 0 ] || {
         useradd -r $GW_USER 2>/dev/null
-        [ $? -ne 0 ] && {
+        [ $? -eq 0 ] || {
             echo Need permissions to add a user. >&2
             return 5
         }
@@ -1059,7 +1059,7 @@ check_log_path()
     [ -d $LOGDIR ] || {
         mkdir -p $LOGDIR
         chown $GW_USER $LOGDIR 2>/dev/null
-        [ $? -ne 0 ] && {
+        [ $? -eq 0 ] || {
             echo Need permissions to change ${LOGDIR}\'s owner. >&2
             return 5
         }
@@ -1071,7 +1071,7 @@ check_run_path()
     [ -d $RUNDIR ] || {
         mkdir -p $RUNDIR
         chown $GW_USER $RUNDIR 2>/dev/null
-        [ $? -ne 0 ] && {
+        [ $? -eq 0 ] || {
             echo Need permissions to change ${RUNDIR}\'s owner. >&2
             return 5
         }
@@ -1083,7 +1083,7 @@ check_spool_dir()
     [ -d $GW_SPOOL_DIR ] || {
         mkdir -p $GW_SPOOL_DIR
         chown $GW_USER $GW_SPOOL_DIR 2>/dev/null
-        [ $? -ne 0 ] && {
+        [ $? -eq 0 ] || {
             echo Need permissions to change ${GW_SPOOL_DIR}\'s owner. >&2
             return 5
         }
