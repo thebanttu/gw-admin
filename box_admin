@@ -592,7 +592,7 @@ install_bison()
 install_gw()
 {
     check_user && check_log_path && check_run_path && \
-        handle_pkgs && gw_install && \
+        check_spool_dir && handle_pkgs && gw_install && \
         sqlbox_install && smppbox_install && \
         launch_config $CONF_TARBALL
 }
@@ -1073,6 +1073,18 @@ check_run_path()
         chown $GW_USER $RUNDIR 2>/dev/null
         [ $? -ne 0 ] && {
             echo Need permissions to change ${RUNDIR}\'s owner. >&2
+            return 5
+        }
+    }
+}
+
+check_spool_dir()
+{
+    [ -d $GW_SPOOL_DIR ] || {
+        mkdir -p $GW_SPOOL_DIR
+        chown $GW_USER $GW_SPOOL_DIR 2>/dev/null
+        [ $? -ne 0 ] && {
+            echo Need permissions to change ${GW_SPOOL_DIR}\'s owner. >&2
             return 5
         }
     }

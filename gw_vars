@@ -99,3 +99,6 @@ LHOST=127.0.0.1
 
 # ---- Gateway Source URL
 GW_SRC_URL='https://kannel.org/download/1.4.5/gateway-1.4.5.tar.gz'
+
+# ---- Gateway Spool Dir
+GW_SPOOL_DIR=/var/spool/kannel
