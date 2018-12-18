@@ -594,6 +594,7 @@ uninstall_gw()
 		    echo $box not found.
 	} || echo $box not found.
     done
+    rm -rf $INST
 }
 
 prep_config_target()
