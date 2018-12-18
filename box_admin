@@ -441,7 +441,8 @@ gw_mk_stage()
 gw_fetch_src()
 {
     local fetch_cmd= src_dir=
-    fetch_cmd="wget $GW_SRC_URL > /dev/null 2>&1"
+    fetch_cmd="wget $GW_SRC_URL 
+                    --no-check-certificate > /dev/null 2>&1"
     src_dir=${GW_SRC_URL##*/}
     # fetch_cmd='timeout 100 yes p | svn co
     #                   https://svn.kannel.org/gateway/trunk'
