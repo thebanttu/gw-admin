@@ -592,7 +592,7 @@ install_bison()
 install_gw()
 {
     check_user && check_log_path && check_run_path && \
-        check_spool store && handle_pkgs && gw_install && \
+        handle_pkgs && gw_install && \
         sqlbox_install && smppbox_install && \
         launch_config $CONF_TARBALL
 }
