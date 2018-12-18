@@ -577,7 +577,6 @@ handle_debian_symlinks()
 {
     ln -s /usr/bin/pcre2-config /usr/bin/pcre-config
     ln -s /usr/bin/mariadb_config /usr/bin/mysql_config
-    ln -s /usr/include/mariadb /usr/include/mysql
 }
 
 install_gw()
