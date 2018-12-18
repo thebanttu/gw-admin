@@ -475,7 +475,7 @@ gw_install()
     pushd $INST
     src_dir=$(gw_fetch_src)
     [ -z $src_dir ] && return 2
-    [ -d $src_dir ] && rm -rf $src_dir
+    [ -d $src_dir ] && rm -rf $src_dir/*
     pushd "$src_dir"
     sh bootstrap.sh
     sh configure --prefix=$GW_DIR --enable-pcre \
