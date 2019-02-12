@@ -40,7 +40,15 @@ gw_status()
     local command= url=
     command=status
     url=$(sed 's/action/'$command'/' <<< "$STATUS_URL")
-    curl $url
+    curl -s $url
+}
+
+gw_store_status_txt()
+{
+    local command= url=
+    command=store-status.txt
+    url=$(sed 's/action/'$command'/' <<< "$STATUS_URL")
+    curl -s $url
 }
 
 gw_store_status()
@@ -48,7 +56,7 @@ gw_store_status()
     local command= url=
     command=store-status
     url=$(sed 's/action/'$command'/' <<< "$STATUS_URL")
-    curl $url
+    curl -s $url
 }
 
 gw_log_level()
@@ -61,7 +69,7 @@ gw_log_level()
         level=$1
         url=$url'&level='$level
     fi
-    curl $url
+    curl -s $url
     echo
 }
 
@@ -70,7 +78,7 @@ gw_shutdown()
     local command= url=
     command=shutdown
     url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
-    curl $url
+    curl -s $url
     echo
 }
 
@@ -79,7 +87,7 @@ gw_suspend()
     local command= url=
     command=suspend
     url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
-    curl $url
+    curl -s $url
     echo
 }
 
@@ -88,7 +96,7 @@ gw_isolate()
     local command= url=
     command=isolate
     url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
-    curl $url
+    curl -s $url
     echo
 }
 
@@ -97,7 +105,7 @@ gw_resume()
     local command= url=
     command=resume
     url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
-    curl $url
+    curl -s $url
     echo
 }
 
@@ -106,7 +114,7 @@ gw_restart()
     local command= url=
     command=restart
     url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
-    curl $url
+    curl -s $url
     echo
 }
 
@@ -115,7 +123,7 @@ gw_graceful_restart()
     local command= url=
     command=graceful-restart
     url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
-    curl $url
+    curl -s $url
     echo
 }
 
@@ -125,7 +133,7 @@ gw_flush_dlr()
     command=flush-dlr
     url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
     gw_suspend
-    [ $? -eq 0 ] && curl $url
+    [ $? -eq 0 ] && curl -s $url
     [ $? -eq 0 ] && {
         echo
         gw_resume
@@ -142,7 +150,7 @@ gw_stop_smsc()
         smsc=$1
         url=$url'&smsc='$smsc
     fi
-    curl $url
+    curl -s $url
     echo
 }
 
@@ -156,7 +164,7 @@ gw_start_smsc()
         smsc=$1
         url=$url'&smsc='$smsc
     fi
-    curl $url
+    curl -s $url
     echo
 }
 
@@ -170,7 +178,7 @@ gw_add_smsc()
         smsc=$1
         url=$url'&smsc='$smsc
     fi
-    curl $url
+    curl -s $url
     echo
 }
 
@@ -184,7 +192,7 @@ gw_remove_smsc()
         smsc=$1
         url=$url'&smsc='$smsc
     fi
-    curl $url
+    curl -s $url
     echo
 }
 
@@ -193,7 +201,7 @@ gw_reload_list()
     local command= url=
     command=reload-lists
     url=$(sed 's/action/'$command'/' <<< "$ADMIN_URL")
-    curl $url
+    curl -s $url
     echo
 }
 
@@ -205,8 +213,8 @@ gw_remove_message()
     if [ $# -gt 0 ]
     then
         id=$1
-        url=$url'&smsc='$smsc
+        url=$url'&id='$id
     fi
-    curl $url
+    curl -s $url
     echo
 }
