@@ -244,7 +244,7 @@ box_exec()
 box_exec_get()
 {
     # What instances of the arg box are running
-    rbox=$(ps aux | grep $1 | grep -v grep | awk '{print $(NF-1), $NF}')
+    rbox=$(ps aux | grep $1 | grep -v grep | awk '/box /{print $(NF-1), $NF}')
     [[ -n $rbox ]] && echo "$rbox" || {
             echo No Running Boxes were found. >&2
             return 2
