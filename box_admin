@@ -187,7 +187,7 @@ box_stop()
                                )
     eval $BINDIR/$START_STOP_DAEMON \
          --stop \
-         --exec $instance \
+         # --exec $instance \
          --pid $PIDFILE
     IFS="$save_ifs"
 }
