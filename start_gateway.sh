@@ -11,7 +11,6 @@ process_return $? 1 "$output"
 output=$(startsqlbox 2>&1)
 process_return $? 1 "$output"
 output=$(startsqlbox resend 2>&1)
-process_return $? 1 "$output"
 
 process_return()
 {
