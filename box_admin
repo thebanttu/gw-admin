@@ -185,9 +185,9 @@ box_stop()
     [[ -n $suffix ]] && PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' \
 				      <<< "$PIDFILE"
                                )
+    # --exec $instance \
     eval $BINDIR/$START_STOP_DAEMON \
          --stop \
-         # --exec $instance \
          --pid $PIDFILE
     IFS="$save_ifs"
 }
@@ -873,7 +873,6 @@ check_spool()
         echo $spool_type is not defined in the config group core.
         return 2
     }
-    owner=$(eval stat -c \'%U\' $spool_dir)
     [ -d $spool_dir ] || {
         mkdir -p $spool_dir 2>/dev/null
         [ $? -ne 0 ] && {
@@ -886,6 +885,7 @@ check_spool()
             return 5
         }
     }
+    owner=$(eval stat -c \'%U\' $spool_dir)
     [ $owner = $GW_USER ] || {
         eval chown $GW_USER $spool_dir 2>/dev/null
         [ $? -ne 0 ] && {
@@ -907,7 +907,7 @@ get_sqlbox_conf()
 {
     local number_of_configs= key= rexp= \
           base=
-    help="Usage: ${FUNCNAME[0]} box_id"
+    help="Usage: ${FUNCNAME[0]} [key]"
     case $# in
         0)
             key=main
