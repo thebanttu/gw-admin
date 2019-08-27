@@ -4,14 +4,6 @@ output=
 cd /root/gw_admin
 . gw
 
-output=$(startbbox 2>&1)
-process_return $? 3 "$output"
-output=$(startsmsbox 2>&1)
-process_return $? 1 "$output"
-output=$(startsqlbox 2>&1)
-process_return $? 1 "$output"
-output=$(startsqlbox resend 2>&1)
-
 process_return()
 {
 	local ret= intv= output=
@@ -32,3 +24,11 @@ process_return()
 		exit 2
 	fi
 }
+
+output=$(startbbox 2>&1)
+process_return $? 3 "$output"
+output=$(startsmsbox 2>&1)
+process_return $? 1 "$output"
+output=$(startsqlbox 2>&1)
+process_return $? 1 "$output"
+output=$(startsqlbox resend 2>&1)
