@@ -1,0 +1,11 @@
+# /etc/systemd/system/gw_start.service
+[Unit]
+Description=Start Gateway
+
+[Service]
+Type=forking
+ExecStart=+/scripts/admin/start_gateway.sh
+PIDFile=/run/kannel/bearerbox.pid
+
+[Install]
+Alias=gateway.service
