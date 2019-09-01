@@ -1,9 +1,13 @@
 These are a bunch of scripts to administer the Gateway otherwise known as the Kannel WAP/SMS Gateway.
 
+./
 box_admin - Gateway administration plumbing shell functions.
 gw - Gateway startup shell functions.
 gw_commands - Shell wrapper functions for the gateway's http administration verbs.
-gw_start.service - Systemd service definition template [ It works but is open for improvement. ]
 gw_vars - The Gateway environment is defined here.
+gw_config.tar.gz - Configuration starter pack.
+
+./systemd/
+gw_start.service - Systemd service definition template [ It works but is open for improvement. ]
 start_gateway.sh - This is what systemd uses to start the gateway.
 stop_gateway.sh - This is what systemd uses to stop the gateway.
