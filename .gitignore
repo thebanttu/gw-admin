@@ -3,3 +3,6 @@
 *~
 gateway-1.4.5*
 gw_vars
+*bz2
+kannel.sh
+monit.kannel.state.sh
