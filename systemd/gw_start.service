@@ -5,7 +5,11 @@ Description=Start Gateway
 [Service]
 Type=forking
 ExecStart=+/scripts/admin/start_gateway.sh
+ExecStop=/scripts/admin/stop_gateway.sh
+ExecReload=/scripts/admin/reload_gateway.sh
 PIDFile=/run/kannel/bearerbox.pid
+Restart=on-failure
+RestartSec=10
 
 [Install]
 Alias=gateway.service
