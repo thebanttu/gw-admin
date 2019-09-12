@@ -1,4 +1,3 @@
-# /etc/systemd/system/gw_start.service
 [Unit]
 Description=Start Gateway
 
