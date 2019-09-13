@@ -3,13 +3,9 @@
 # Variables
 
 # ---- Gateway Name
-GW_NAME=
-printf "Please provide the gateway name [testing]: " >&2
-read -e GW_NAME
-if [[ ! $GW_NAME =~ ..+ ]]
-then
-    GW_NAME=testing
-fi
+# ---- This is presumably set from the presiding
+# ---- user's .bashrc or .bash_profile.
+GW_NAME=$gateway_name
 
 # ---- Needed in check_pkgs
 declare -A os_pkgs=(
