@@ -1034,7 +1034,8 @@ check_spool()
     core=${GW_CONF%/*}/core.conf
     spool_dir=$(eval awk -F\' = \' \
                      \"/^$spool_type/{print \\\$NF}\" \
-                     $core
+                     $core  \| sed -e \'s/\"//g\' \
+                     -e \"s/\'//g\"
              )
     [ -z $spool_dir ] && {
         echo $spool_type is not defined in the config group core.
