@@ -146,6 +146,38 @@ box_start()
          --verbose
 }
 
+# Start Box with parachute.
+box_start_parachute()
+{
+    local box= exe= suffix= rbox=
+    box=$(box_args "$@")
+    box_valid $box || return
+    exe=$(box_exec "$@")
+    [[ -z $exe ]] && return 2
+    if [[ $box =~ ${box_regexes[aux_box]} ]]
+    then
+	eval bbox_check_port $exe || return
+        suffix=$(awk -F/ '{print $NF}' <<< "$exe" |\
+		     sed -e 's/\..*//' \
+			 -e 's/'$box'//' \
+			 -e 's/^[^a-zA-Z]*//'
+	      )
+    elif [[ $box =~ ${box_regexes[smsbox]} ]]
+    then
+		eval bbox_check_port $exe || return
+    else
+		:
+    fi
+    # PIDFILE=$RUNDIR/${box}.pid
+    [[ -n $suffix ]] && rbox=$(sed 's/$/_'$suffix'/' \
+				      <<< "$box")
+    BOX_OPTIONS=${BOX_OPTIONS}/${rbox}.pid
+    [[ $box =~ ${box_regexes[bbox]} ]] && \
+    	BOX_OPTIONS="$BOX_OPTIONS --panic-script $PANIC_SCRIPT"
+    eval $(awk '{print $1}' <<< "$exe") $BOX_OPTIONS -- \
+		 $(awk '{print $2}' <<< "$exe")
+}
+
 # Stop Box
 box_stop()
 {
@@ -189,6 +221,66 @@ box_stop()
     eval $BINDIR/$START_STOP_DAEMON \
          --stop \
          --pid $PIDFILE
+    IFS="$save_ifs"
+}
+
+# Stop Box with parachute
+box_stop_parachute()
+{
+    local PIDFILE= suffix= save_ifs= box= exe= instance=
+    save_ifs=$IFS
+    box=$(box_args "$@")
+    box_valid $box || return $?
+    exe=$(box_exec_get_parachute "$box")
+    [[ -z $exe ]] && return 2
+    # for ((i=$(wc -l <<< "$exe"); i>0; i--)) do
+    IFS=$'\n'
+    PIDFILE=$RUNDIR/${box}.pid
+    if [[ $(wc -l <<< "$exe") -gt 1 ]]
+    then
+        select instance in $exe
+        do
+            # instance=$(sed -n ${i}p <<< "$exe")
+            suffix=$(awk -F/ '{print $NF}' \
+                         <<< $instance |\
+                         sed -e 's/\..*//' \
+                             -e "s/$box//" \
+                             -e 's/^[^a-zA-Z]*//' \
+                             -e 's/\n//'
+                  )
+            break
+        done
+    else
+        instance=$exe
+        [[ $box =~ ${box_regexes[aux_box]} ]] && \
+            suffix=$(awk -F/ '{print $NF}' \
+                         <<< "$exe" |\
+                         sed -e 's/\..*//' \
+                             -e 's/'$box'//' \
+                             -e 's/^[^a-zA-Z]*//'
+                  )
+    fi
+    if [[ -n $suffix ]]
+    then
+        PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' <<< "$PIDFILE")
+    else
+        # If you can't find a "suffixless" file
+        # try adding an _main suffix.
+        [[ $(ls -d $PIDFILE 2>/dev/null) =~ ^\ *$ ]] && \
+            PIDFILE=$(sed 's/\(\.pid\)/_main\1/' <<< "$PIDFILE")
+    fi
+    [[ -r $PIDFILE ]] || {
+        echo PID File not found. You shall have to stop the box manually \
+             the good old fashioned way with \
+             "ps -ef | grep ([b]ox_of_choice) | awk '$3==1", YMMV, \
+             and kill the thing. >&2
+        return 2
+    }
+    # --exec $instance \
+    # eval $BINDIR/$START_STOP_DAEMON \
+    #      --stop \
+    #      --pid $PIDFILE
+    kill $(cat $PIDFILE | xargs)
     IFS="$save_ifs"
 }
 
@@ -251,6 +343,22 @@ box_exec_get()
 	}
 }
 
+# Return box & config path of queried box.
+box_exec_get_parachute()
+{
+    # What instances of the arg box are running
+    rbox=$(ps aux | \
+              grep $1 | \
+              grep -v grep | \
+              sed 's/[^/]*//' | \
+              awk '/box /{print $(NF-1), $NF}' \
+              sort -u
+          )
+    [[ -n $rbox ]] && echo "$rbox" || {
+            echo No Running Boxes were found. >&2
+            return 2
+	}
+}
 
 bbox_check_port()
 {
@@ -276,6 +384,65 @@ bbox_check_port()
         return 6
     }
     return 0
+}
+
+# Send signal to (b)box parachute edition.
+box_send_signal_parachute()
+{
+    local PIDFILE= suffix= save_ifs= box= exe= instance= sig=
+    save_ifs=$IFS
+    sig=$(signal_passed "$@")
+    signal_valid $sig || return $?
+    box=$(box_args "$@")
+    box_valid $box || return $?
+    exe=$(box_exec_get_parachute "$box")
+    [[ -z $exe ]] && return 2
+    # for ((i=$(wc -l <<< "$exe"); i>0; i--)) do
+    IFS=$'\n'
+    PIDFILE=$RUNDIR/$box.pid
+    if [[ $(wc -l <<< "$exe") -gt 1 ]]; then
+        select instance in $exe; do
+            # instance=$(sed -n ${i}p <<< "$exe")
+            suffix=$(awk -F/ '{print $NF}' \
+                         <<< $instance |\
+                         sed -e 's/\..*//' \
+                             -e "s/$box//" \
+                             -e 's/^[^a-zA-Z]*//' \
+                             -e 's/\n//'
+                  )
+            break
+        done
+    else
+        instance=$exe
+        [[ $box =~ ${box_regexes[aux_box]} ]] && \
+            suffix=$(awk -F/ '{print $NF}' \
+                         <<< "$exe" |\
+                         sed -e 's/\..*//' \
+                             -e 's/'$box'//' \
+                             -e 's/^[^a-zA-Z]*//'
+                  )
+    fi
+    if [[ -n $suffix ]]
+    then
+        PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' <<< "$PIDFILE")
+    else
+        [[ $(ls -d $PIDFILE 2>/dev/null) =~ ^\ *$ ]] && \
+            PIDFILE=$(sed 's/\(\.pid\)/_main\1/' <<< "$PIDFILE")
+    fi
+    [[ -r $PIDFILE ]] || {
+        echo PID File not found. You shall have to do it manually, \
+             the good old fashioned way with \
+             "ps -ef | grep ([b]ox_of_choice) | awk '$3==1", YMMV,\
+             and send the signal to the thing. >&2
+        return 2
+    }
+    # eval $BINDIR/$START_STOP_DAEMON \
+    #      --stop \
+    #      --signal $sig \
+    #      --exec $instance \
+    #      --pid $PIDFILE
+    kill -$sig $(cat $PIDFILE | xargs)
+    IFS="$save_ifs"
 }
 
 # Send signal to (b)box

@@ -7,6 +7,11 @@
 # ---- user's .bashrc or .bash_profile.
 GW_NAME=$gateway_name
 
+# ---- Current Working Directory
+[[ $(dirname $BASH_SOURCE) = '.' ]] &&
+    GW_ADMIN_CWD=$(pwd) || \
+    GW_ADMIN_CWD=$(pwd)/$(sed 's:^\./::' <<< $(dirname $BASH_SOURCE))
+
 # ---- Needed in check_pkgs
 declare -A os_pkgs=(
     [debian]='build-essential|netcat-openbsd|libxml2-dev|libmariadbclient-dev-compat|libpcre3-dev|wget'
@@ -42,6 +47,7 @@ declare -A box_regexes=(
     [aux_box]='\<(sql|(open)?smpp)box\>'
     [main_box]='\<(bearer|sms)box\>'
     [smsbox]='\<smsbox\>'
+    [bbox]='\<bearerbox\>'
 )
 
 # ---- Used when checking mysql dlr storage and sqlbox connectivity to DB
@@ -68,18 +74,14 @@ START_STOP_DAEMON=start-stop-daemon
 BBOX=bearerbox SMSBOX=smsbox SQLBOX=sqlbox SMPPBOX=opensmppbox
 
 # ---- Config Tarball
-if [[ $(dirname $BASH_SOURCE) = '.' ]]
-then
-    CONF_TARBALL=$(pwd)/gw_config.tar.gz
-elif [[ $(dirname $BASH_SOURCE) =~ ^\..+ ]]
-then
-    CONF_TARBALL=$(pwd)/$(sed 's:^\./::' <<< $(dirname $BASH_SOURCE))
-    CONF_TARBALL=$CONF_TARBALL/gw_config.tar.gz
-fi
+CONF_TARBALL=$GW_ADMIN_CWD/gw_config.tar.gz
 
 # ---- The Almighty Configs
 GW_CONF=/etc/kannel/$GW_NAME/kannel.conf
 SQLBOX_CONF= SMPPBOX_CONF=
+
+# ---- Gateway Spool Dir
+GW_SPOOL_DIR=/var/spool/kannel
 
 # ---- PID and stuff
 RUNDIR=/var/run/kannel
@@ -98,3 +100,14 @@ GW_SRC_URL='https://kannel.org/download/1.4.5/gateway-1.4.5.tar.gz'
 
 # ---- Gateway Spool Dir
 GW_SPOOL_DIR=/var/spool/kannel
+# ---- Options to start the gateway boxes
+BOX_OPTIONS="--daemonize \
+	 --parachute \
+	 --user $GW_USER \
+	 --pid-file $RUNDIR"
+
+# ---- Panic Script (Ran after bearerbox's child
+#      fails and is restarted by its watcher
+#      parent process.)
+
+PANIC_SCRIPT=$GW_SCRIPT_DIR/panic_routine.sh
