@@ -1269,3 +1269,25 @@ print_error()
     echo
     return $code
 }
+
+__infect_bashrc()
+{
+    local bashrc_snippet=$SNIPPETS/bashrc.snip
+    local bashrc=$HOME/.bashrc
+    diff \
+        gw_admin/snippets/bashrc.snip \
+        <(
+            sed -n '/= Gateway Stuff =/,/===*/p' $bashrc | \
+            sed 's/^\(gate[^=]*.\).*/\1/'
+         ) \
+        > /dev/null 2>&1
+    [ $? -ne 0 ] && \
+        cat <(echo; cat $bashrc_snippet) >> $bashrc
+}
+__move_admin_scripts()
+{
+    local src_dir=$GW_ADMIN_CWD/admin
+    [ -d $TARGET_SCRIPT_DIR ] || \
+        mkdir -p $TARGET_SCRIPT_DIR
+    yes | cp -u $src_dir/*sh $TARGET_SCRIPT_DIR > /dev/null 2>&1
+}

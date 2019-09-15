@@ -86,6 +86,9 @@ GW_SPOOL_DIR=/var/spool/kannel
 # ---- PID and stuff
 RUNDIR=/var/run/kannel
 
+# ---- Snippet Directory
+SNIPPETS=$GW_ADMIN_CWD/snippets
+
 # ---- Your children shall belong to
 GW_USER=kannel
 
@@ -98,8 +101,6 @@ LHOST=127.0.0.1
 # ---- Gateway Source URL
 GW_SRC_URL='https://kannel.org/download/1.4.5/gateway-1.4.5.tar.gz'
 
-# ---- Gateway Spool Dir
-GW_SPOOL_DIR=/var/spool/kannel
 # ---- Options to start the gateway boxes
 BOX_OPTIONS="--daemonize \
 	 --parachute \
@@ -111,3 +112,6 @@ BOX_OPTIONS="--daemonize \
 #      parent process.)
 
 PANIC_SCRIPT=$GW_SCRIPT_DIR/panic_routine.sh
+
+# ---- Gateway Script Dir
+TARGET_SCRIPT_DIR=/usr/local/scripts/gateway/admin

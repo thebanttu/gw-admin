@@ -1,0 +1,19 @@
+# ======== Gateway Stuff ========
+
+gateway_name=
+if [[ ! $gateway_name =~ ^\ *$ ]]
+then
+    save_path=$(pwd)
+    cd $HOME/gw_admin
+    source gw
+    source gw_commands
+    cd $save_path
+else
+    echo Gateway Name not set in your ~/.bashrc >&2
+fi
+
+# Gateway Shell Env
+kl=/var/log/kannel/$gateway_name
+kc=/etc/kannel/$gateway_name
+
+# ===============================

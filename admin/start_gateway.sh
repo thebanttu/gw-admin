@@ -1,8 +1,9 @@
 #!/bin/bash
 
-output=
 cd /root/gw_admin
 . gw
+
+output=
 
 process_return()
 {

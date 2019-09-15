@@ -9,5 +9,12 @@ gw_config.tar.gz - Configuration starter pack.
 
 ./systemd/
 gw_start.service - Systemd service definition template [ It works but is open for improvement. ]
+
+./admin/
 start_gateway.sh - This is what systemd uses to start the gateway.
 stop_gateway.sh - This is what systemd uses to stop the gateway.
+reload_gateway - Send HUP to bearerbox to get it to reread configs.
+panic_routine - Exectuted by parachute watcher process after bbox child fails or dies.
+
+./snippets
+bashrc.snip - Snippet of shell to inject into the bashrc file.
