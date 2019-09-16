@@ -1,6 +1,6 @@
-# ======== Gateway Stuff ========
+# ============== Gateway Stuff ==============
 
-gateway_name=
+export gateway_name=
 if [[ ! $gateway_name =~ ^\ *$ ]]
 then
     save_path=$(pwd)
@@ -8,12 +8,12 @@ then
     source gw
     source gw_commands
     cd $save_path
+    # Gateway Shell Env
+    export kl=/var/log/kannel/$gateway_name
+    export kc=/etc/kannel/$gateway_name
 else
-    echo Gateway Name not set in your ~/.bashrc >&2
+    echo Gateway Name not set in your \
+	 ~/.bashrc >&2
 fi
 
-# Gateway Shell Env
-export kl=/var/log/kannel/$gateway_name
-export kc=/etc/kannel/$gateway_name
-
-# ===============================
+# ===========================================
