@@ -7,6 +7,14 @@
 
 . box_admin
 
+if [[ $gateway_name =~ ^\ *$ ]]
+then
+    echo \$gateway_name is not set. Don\'t panic\; we shall \
+         help you to set it. Please provide the name of your \
+         gateway at the next prompt. >&2
+    __infect_bashrc
+fi
+
 # Wrapper Scripts
 # startbbox, startsmsbox, startsqlbox
 
