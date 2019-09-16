@@ -18,3 +18,11 @@ panic_routine - Exectuted by parachute watcher process after bbox child fails or
 
 ./snippets
 bashrc.snip - Snippet of shell to inject into the bashrc file.
+
+On cloning the repo onto a fresh server.
+cd into it and run:
+    . gw
+This shall first ask you for your preferred gateway_name, please provide it.
+The gateway admin functions and functionality shall then be loaded into your
+environment while also having your .bashrc edited to have this happen each time
+you log in as the current user.
