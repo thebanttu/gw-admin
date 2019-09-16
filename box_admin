@@ -1271,10 +1271,23 @@ print_error()
     return $code
 }
 
+__disinfect_bashrc()
+{
+    local bashrc=$HOME/.bashrc blank=
+    blank=$(($(sed -n '/= Gate[^=]*==*/=' $bashrc) - 1))
+    sed -i \
+        -e ${blank}d \
+        -e '/= Gate[^=]*==*/,/^# ===* *$/d' \
+        $bashrc
+    unset -v gateway_name GW_NAME
+}
+
 __infect_bashrc()
 {
     local bashrc_snippet=$SNIPPETS/bashrc.snip
-    local bashrc=$HOME/.bashrc
+    local bashrc=$HOME/.bashrc gw_name
+    grep -q '= Gate[^=]*==*' $bashrc
+    [ $? -eq 0 ] && __disinfect_bashrc
     diff \
         gw_admin/snippets/bashrc.snip \
         <(
@@ -1284,7 +1297,13 @@ __infect_bashrc()
         > /dev/null 2>&1
     [ $? -ne 0 ] && \
         cat <(echo; cat $bashrc_snippet) >> $bashrc
+    printf "Gateway Name: "; read gw_name
+    sed -i '/= Gateway Stuff =/,/^export gateway/{
+               /^export/s/^\([^=]*.\).*/\1'$gw_name'/
+            }' $bashrc
+    source $bashrc
 }
+
 __move_admin_scripts()
 {
     local src_dir=$GW_ADMIN_CWD/admin
