@@ -168,7 +168,7 @@ box_start_parachute()
     else
 		:
     fi
-    # PIDFILE=$RUNDIR/${box}.pid
+    rbox=${box}
     [[ -n $suffix ]] && rbox=$(sed 's/$/_'$suffix'/' \
 				      <<< "$box")
     BOX_OPTIONS=${BOX_OPTIONS}/${rbox}.pid
@@ -351,7 +351,7 @@ box_exec_get_parachute()
               grep $1 | \
               grep -v grep | \
               sed 's/[^/]*//' | \
-              awk '/box /{print $(NF-1), $NF}' \
+              awk '/box /{print $1, $NF}' | \
               sort -u
           )
     [[ -n $rbox ]] && echo "$rbox" || {
