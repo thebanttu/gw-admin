@@ -6,3 +6,4 @@ gw_vars
 *bz2
 kannel.sh
 monit.kannel.state.sh
+tests/*

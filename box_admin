@@ -150,10 +150,12 @@ box_start()
 box_start_parachute()
 {
     local box= exe= suffix= rbox=
+    local options=
     box=$(box_args "$@")
     box_valid $box || return
     exe=$(box_exec "$@")
     [[ -z $exe ]] && return 2
+    pid_prefix=${box}
     if [[ $box =~ ${box_regexes[aux_box]} ]]
     then
 	eval bbox_check_port $exe || return
@@ -168,13 +170,19 @@ box_start_parachute()
     else
 		:
     fi
-    rbox=${box}
-    [[ -n $suffix ]] && rbox=$(sed 's/$/_'$suffix'/' \
+    [[ -n $suffix ]] && pid_prefix=$(sed 's/$/_'$suffix'/' \
 				      <<< "$box")
-    BOX_OPTIONS=${BOX_OPTIONS}/${rbox}.pid
+    # Apparently the box won't play nice if you try to 
+    # clobber a pid file, so attempt to stop the box then
+    # proceed to remove the pid file.
+    [ -f $RUNDIR/${pid_prefix}.pid ] &&  {
+        eval kill -KILL $(cat $RUNDIR/${pid_prefix}.pid)
+        __remove_pid_file $pid_prefix
+    }
+    options=${BOX_OPTIONS}/${pid_prefix}.pid
     [[ $box =~ ${box_regexes[bbox]} ]] && \
-    	BOX_OPTIONS="$BOX_OPTIONS --panic-script $PANIC_SCRIPT"
-    eval $(awk '{print $1}' <<< "$exe") $BOX_OPTIONS -- \
+    	options="$options --panic-script $PANIC_SCRIPT"
+    eval $(awk '{print $1}' <<< "$exe") $options -- \
 		 $(awk '{print $2}' <<< "$exe")
 }
 
@@ -266,7 +274,7 @@ box_stop_parachute()
     else
         # If you can't find a "suffixless" file
         # try adding an _main suffix.
-        [[ $(ls -d $PIDFILE 2>/dev/null) =~ ^\ *$ ]] && \
+        [[ $(command ls -d $PIDFILE 2>/dev/null) =~ ^\ *$ ]] && \
             PIDFILE=$(sed 's/\(\.pid\)/_main\1/' <<< "$PIDFILE")
     fi
     [[ -r $PIDFILE ]] || {
@@ -1310,4 +1318,21 @@ __move_admin_scripts()
     [ -d $TARGET_SCRIPT_DIR ] || \
         mkdir -p $TARGET_SCRIPT_DIR
     yes | cp -u $src_dir/*sh $TARGET_SCRIPT_DIR > /dev/null 2>&1
+}
+
+__remove_pid_file()
+{
+    local pidfile=
+    [ $# -eq 1 ] && pidfile=$RUNDIR/${1}.pid || {
+        echo "Usage: ${FUNCNAME[0]} pid_basename" >&2
+        return 2
+    }
+    [ -f $pidfile ] && rm -f $pidfile || {
+        echo PID file \"$pidfile\" not found. Nothing to do >&2
+        return 0
+    }
+    [ $? -ne 0 ] && {
+        echo Removal of PID file \"$pidfile\" failed. >&2
+        return 2
+    } || return 0
 }
