@@ -1,0 +1,43 @@
+#!/bin/bash
+
+set -x
+sysd=/lib/systemd/system
+sysd_env=/etc/default
+site_admin=/usr/local/scripts/gateway/admin
+
+systemctl stop bearerbox smsbox sqlbox >& /dev/null
+systemctl disable bearerbox smsbox sqlbox >& /dev/null
+find \
+    $sysd \
+    $sysd_env \
+    $site_admin \
+    \( \
+        -name '*.??' -o \
+        -name 'kannel' -o \
+        -name 'bearerbox.service' -o \
+        -name 'smsbox.service' -o \
+        -name 'sqlbox.service' \
+    \) \
+    -delete >& /dev/null
+
+set +x
+
+source ~/.bashrc
+
+find \
+    $sysd \
+    $sysd_env \
+    $site_admin \
+    \( \
+        -name '*.??' -o \
+        -name 'kannel' -o \
+        -name 'bearerbox.service' -o \
+        -name 'smsbox.service' -o \
+        -name 'sqlbox.service' \
+    \) \
+    -ls
+
+systemctl enable bearerbox smsbox sqlbox
+systemctl start bearerbox smsbox sqlbox
+systemctl status bearerbox smsbox sqlbox
+

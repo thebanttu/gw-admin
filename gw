@@ -5,7 +5,8 @@
 # Tools to do routine stuff with the Kannel Gateway.
 # |-_-|
 
-. box_admin
+gw_admin_root=$(dirname $BASH_SOURCE)
+. $gw_admin_root/box_admin
 
 if [[ $gateway_name =~ ^\ *$ ]]
 then

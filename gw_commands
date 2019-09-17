@@ -1,6 +1,7 @@
 #!/bin/bash
 
-. gw_vars
+gw_admin_root=$(dirname $BASH_SOURCE)
+. $gw_admin_root/gw_vars
 
 BBOX_HOST=$LHOST
 ADMIN_PORT=$(awk -F' = ' \

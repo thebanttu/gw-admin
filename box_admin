@@ -1,6 +1,7 @@
 #!/bin/bash
 
-. gw_vars
+gw_admin_root=$(dirname $BASH_SOURCE)
+. $gw_admin_root/gw_vars
 # Sanity Check(s)
 
 # -----< Begin sanity checks. >----- #
@@ -303,6 +304,37 @@ box_stop_parachute()
     #      --stop \
     #      --pid $PIDFILE
     kill $(cat $PIDFILE | xargs)
+    IFS="$save_ifs"
+}
+
+# Stop All Boxes
+box_stop_all()
+{
+    local PIDFILE= suffix= save_ifs= box= exe= instance=
+    save_ifs=$IFS
+    box=$(box_args "$@")
+    box_valid $box || return $?
+    exe=$(box_exec_get "$box")
+    [[ -z $exe ]] && return 2
+    IFS=$'\n'
+    PIDFILE=$RUNDIR/$box.pid
+    # for ((i=$(wc -l <<< "$exe"); i>0; i--)) do
+    for instance in $exe
+    do
+        [[ $box =~ ${box_regexes[aux_box]} ]] && \
+            suffix=$(awk -F/ '{print $NF}' \
+                         <<< $instance |\
+                         sed -e 's/\..*//' \
+                             -e "s/$box//" \
+                             -e 's/^[^a-zA-Z]*//' \
+                             -e 's/\n//'
+                  )
+        [[ -n $suffix ]] && \
+            PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' <<< "$PIDFILE")
+        eval $BINDIR/$START_STOP_DAEMON \
+             --stop \
+             --pid $PIDFILE
+    done
     IFS="$save_ifs"
 }
 
@@ -1326,12 +1358,52 @@ __infect_bashrc()
     source $bashrc
 }
 
-__move_admin_scripts()
+# It seems like a better idea to use rsync instead of cp.
+# I suspect rsync is a bit more portable too.
+__copy_admin_scripts()
 {
-    local src_dir=$GW_ADMIN_CWD/admin
+    local src_dir=$gw_admin_root/admin
     [ -d $TARGET_SCRIPT_DIR ] || \
         mkdir -p $TARGET_SCRIPT_DIR
-    yes | cp -u $src_dir/*sh $TARGET_SCRIPT_DIR > /dev/null 2>&1
+    yes | cp -ru $src_dir/{start,stop,reload} $TARGET_SCRIPT_DIR > /dev/null 2>&1
+}
+
+__copy_env_file()
+{
+    local src_dir=$gw_admin_root/systemd/env
+    [ -d $SYSTEMD_ENV_DIR ] || \
+        mkdir -p $SYSTEMD_ENV_DIR
+    yes | cp -ru $src_dir/kannel $SYSTEMD_ENV_DIR > /dev/null 2>&1
+}
+
+__update_systemd_unit_files()
+{
+    local src_dir=$gw_admin_root/systemd
+    [ -d $SYSTEMD_UNIT_DIR ] || \
+        mkdir -p $SYSTEMD_UNIT_DIR
+    yes | cp -ru $src_dir/*.service $SYSTEMD_UNIT_DIR > /dev/null 2>&1
+}
+
+__systemd_enable_box()
+{
+    [[ $# -eq 1 && ${1} =~ ${box_regexes[avail_boxes]} ]] || {
+        echo "Usage: ${FUNCNAME[0]} valid_box_name" >&2
+        return 2
+    }
+    which systemctl >& /dev/null
+    [ $? -ne 0 ] && {
+        echo It seems you are running on a different init \
+             system from systemd. Tough luck. >&2
+        return 2
+    }
+    systemctl is-enabled ${1} >& /dev/null
+    [ $? -eq 0 ] && return 0
+    __update_systemd_unit_files
+    systemctl enable ${1} >& /dev/null
+    [ $? -eq 0 ] || {
+        echo Something seems to have gone awry. >&2
+        return 2
+    }
 }
 
 __remove_pid_file()

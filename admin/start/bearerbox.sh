@@ -1,7 +1,6 @@
 #!/bin/bash
 
-cd /root/gw_admin
-. gw
+. /root/gw_admin/gw
 
 output=
 
@@ -28,8 +27,3 @@ process_return()
 
 output=$(startbbox 2>&1)
 process_return $? 3 "$output"
-output=$(startsmsbox 2>&1)
-process_return $? 1 "$output"
-output=$(startsqlbox 2>&1)
-process_return $? 1 "$output"
-output=$(startsqlbox resend 2>&1)

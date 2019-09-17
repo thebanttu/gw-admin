@@ -3,12 +3,18 @@
 export gateway_name=
 if [[ ! $gateway_name =~ ^\ *$ ]]
 then
-    save_path=$(pwd)
-    cd $HOME/gw_admin
-    source gw
-    source gw_commands
-    cd $save_path
-    # Gateway Shell Env
+    source $HOME/gw_admin/gw
+    source $HOME/gw_admin/gw_commands
+    __copy_admin_scripts
+    __copy_env_file
+    for box in \
+        bearerbox \
+        smsbox \
+        sqlbox
+    do
+        __systemd_enable_box $box
+    done
+    # Gateway Shell Env for convenience
     export kl=/var/log/kannel/$gateway_name
     export kc=/etc/kannel/$gateway_name
 else

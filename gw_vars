@@ -48,6 +48,7 @@ declare -A box_regexes=(
     [main_box]='\<(bearer|sms)box\>'
     [smsbox]='\<smsbox\>'
     [bbox]='\<bearerbox\>'
+    [avail_boxes]='\<(bearer|sms|sql|(open)?smpp)box\>'
 )
 
 # ---- Used when checking mysql dlr storage and sqlbox connectivity to DB
@@ -126,3 +127,9 @@ PANIC_SCRIPT=$GW_SCRIPT_DIR/panic_routine.sh
 
 # ---- Gateway Script Dir
 TARGET_SCRIPT_DIR=/usr/local/scripts/gateway/admin
+
+# ---- Systemd's Gateway Env Dir
+SYSTEMD_ENV_DIR=/etc/default
+
+# ---- Systemd's Unit Dirs
+SYSTEMD_UNIT_DIR=/lib/systemd/system
