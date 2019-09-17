@@ -146,7 +146,7 @@ box_start()
     #       /opt/gw/kannel/sbin/run_kannel_box -- \
     #         --pidfile /var/run/kannel/smsbox.pid \
     #         --min-delay 15 \
-    #       /opt/gw/kannel/sbin/smsbox -- /etc/kannel/wad-digital/kannel.conf
+    #       /opt/gw/kannel/sbin/smsbox -- /etc/kannel/$GW_NAME/kannel.conf
 
     eval $BINDIR/$START_STOP_DAEMON \
          --start \
@@ -1003,7 +1003,7 @@ dlr_store_file_name()
 	store_type=$1
     }
     file_name=$(sed -n \
-		    "/External/,/S *M *S/{/$store_type/{p;q}}" \
+		    "/D  *L  *R  *s/,/S *M *S/{/$store_type/{p;q}}" \
 		    $GW_CONF |\
 		    awk '{print $NF}'
 	     )
@@ -1192,9 +1192,11 @@ check_mysql()
         echo $help >&2
         return 2
     }
-    [[ $1 =~ ^sqlbox$ ]] && [ $# -eq 2 ] || {
-        echo $echo >&2
-        return 2
+    [[ $1 =~ ^sqlbox$ ]] && {
+        [[ $# -eq 2 ]] || {
+            echo $help >&2
+            return 2
+        }
     }
     if [ $1 = 'dlrstore' ]
     then
@@ -1374,6 +1376,8 @@ __copy_env_file()
     [ -d $SYSTEMD_ENV_DIR ] || \
         mkdir -p $SYSTEMD_ENV_DIR
     yes | cp -ru $src_dir/kannel $SYSTEMD_ENV_DIR > /dev/null 2>&1
+    sed -i -e '/^gateway_name/s/^\([^=]*.\).*/\1'$GW_NAME'/' \
+        $SYSTEMD_ENV_DIR/kannel
 }
 
 __update_systemd_unit_files()

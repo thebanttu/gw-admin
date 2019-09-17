@@ -5,7 +5,7 @@ Description=Start Smsbox
 [Service]
 EnvironmentFile=-/etc/default/kannel
 Type=forking
-ExecStart=+/usr/local/scripts/gateway/admin/start/smsbox.sh
+ExecStart=-/usr/local/scripts/gateway/admin/start/smsbox.sh
 ExecStop=/usr/local/scripts/gateway/admin/stop/smsbox.sh
 # ExecReload=/usr/local/scripts/gateway/admin/reload/smsbox.sh
 Restart=always
