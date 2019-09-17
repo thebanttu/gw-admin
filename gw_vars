@@ -68,6 +68,9 @@ GW_DIR=/opt/gw/kannel
 BINDIR=$GW_DIR/sbin
 
 # ---- Daemonizer numero uno
+RUN_BOX=run_kannel_box
+
+# ---- Daemonizer numero dos
 START_STOP_DAEMON=start-stop-daemon
 
 # ---- Them boxes
@@ -101,11 +104,19 @@ LHOST=127.0.0.1
 # ---- Gateway Source URL
 GW_SRC_URL='https://kannel.org/download/1.4.5/gateway-1.4.5.tar.gz'
 
-# ---- Options to start the gateway boxes
+# ---- Options to start the gateway boxes with the parachute option.
+# ---- This has since been proven "superflous" as the run_kannel_box
+# ---- binary does the thing that --parachute does while also as
+# ---- a bonus making the restart interval configurable and handling
+# ---- the creation and deletion of the pid file automatically for
+# ---- you.
 BOX_OPTIONS="--daemonize \
 	 --parachute \
 	 --user $GW_USER \
 	 --pid-file $RUNDIR"
+
+# ---- Min delay for run_kannel_box
+RUN_BOX_MIN_DELAY=15
 
 # ---- Panic Script (Ran after bearerbox's child
 #      fails and is restarted by its watcher

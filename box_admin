@@ -136,14 +136,28 @@ box_start()
     PIDFILE=$RUNDIR/$box.pid
     [[ -n $suffix ]] && PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' \
 				      <<< "$PIDFILE")
+    # /opt/gw/kannel/sbin/start-stop-daemon \
+    #   --start \
+    #   --quiet \
+    #   --chuid kannel \
+    #   --pidfile /var/run/kannel/smsbox.pid \
+    #   --exec \
+    #       /opt/gw/kannel/sbin/run_kannel_box -- \
+    #         --pidfile /var/run/kannel/smsbox.pid \
+    #         --min-delay 15 \
+    #       /opt/gw/kannel/sbin/smsbox -- /etc/kannel/wad-digital/kannel.conf
+
     eval $BINDIR/$START_STOP_DAEMON \
          --start \
-         --exec $exe \
-         --pid $PIDFILE \
-         --make-pidfile \
+         --quiet \
          --chuid $GW_USER \
-         --background \
-         --verbose
+         --pidfile $PIDFILE \
+         --exec \
+            $BINDIR/$RUN_BOX -- \
+              --pidfile $PIDFILE \
+              --min-delay $RUN_BOX_MIN_DELAY \
+              $(awk '{print $1}' <<< $exe) -- \
+              $(awk '{print $2}' <<< $exe)
 }
 
 # Start Box with parachute.
@@ -344,7 +358,7 @@ box_exec()
 box_exec_get()
 {
     # What instances of the arg box are running
-    rbox=$(ps aux | grep $1 | grep -v grep | awk '/box /{print $(NF-1), $NF}')
+    rbox=$(ps aux | grep $1 | grep -v grep | awk '/run_kannel_box /{print $(NF-2), $NF}')
     [[ -n $rbox ]] && echo "$rbox" || {
             echo No Running Boxes were found. >&2
             return 2
