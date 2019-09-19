@@ -812,10 +812,10 @@ install_bison()
 
 install_gw()
 {
-    check_user && check_log_path && check_run_path && \
-        check_spool_dir && handle_pkgs && gw_install && \
-        sqlbox_install && smppbox_install && \
-        launch_config $CONF_TARBALL
+    check_user && check_gw_dir && check_log_path && \
+        check_run_path && check_spool_dir && \
+        handle_pkgs && gw_install && sqlbox_install && \
+        smppbox_install && launch_config $CONF_TARBALL
 }
 
 uninstall_gw()
@@ -1275,6 +1275,13 @@ check_user()
             echo Need permissions to add a user. >&2
             return 5
         }
+    }
+}
+
+check_gw_dir()
+{
+    [ -d $GW_DIR ] || {
+        mkdir -p $GW_DIR
     }
 }
 
