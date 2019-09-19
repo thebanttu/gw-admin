@@ -26,9 +26,9 @@ process_return()
 	fi
 }
 
-output=$(startsqlbox 2>&1)
+output=$(startsqlbox 2>&1 | sed 1d)
 process_return $? 0.2 "$output"
-output=$(startsqlbox resend 2>&1)
+output=$(startsqlbox resend 2>&1 | sed 1d)
 process_return $? 0 "$output"
 
 pidfiles=$(sed 's/.$//' <<< "$pidfiles")
@@ -38,6 +38,9 @@ do
     for pid in "$pidfiles"
     do
         kill -0 $(cat $pid) 2>/dev/null
-        [ $? -ne 0 ] && exit 1
+        [ $? -ne 0 ] && break 2
     done
+    sleep 10
 done
+
+exit 11
