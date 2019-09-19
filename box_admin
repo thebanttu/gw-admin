@@ -1409,7 +1409,8 @@ __systemd_enable_box()
         return 2
     }
     systemctl is-enabled ${1} >& /dev/null
-    [ $? -eq 0 ] && return 0
+    [ $? -eq 0 ] && \
+        systemctl disable ${1} >& /dev/null
     __update_systemd_unit_files
     systemctl enable ${1} >& /dev/null
     [ $? -eq 0 ] || {
