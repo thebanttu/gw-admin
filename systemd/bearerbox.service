@@ -1,6 +1,6 @@
 [Unit]
 After=network.target
-Description=Start Bearerbox
+Description=Bearerbox
 
 [Service]
 EnvironmentFile=-/etc/default/kannel

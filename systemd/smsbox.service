@@ -1,6 +1,6 @@
 [Unit]
 After=bearerbox.service
-Description=Start Smsbox
+Description=Smsbox
 
 [Service]
 EnvironmentFile=-/etc/default/kannel

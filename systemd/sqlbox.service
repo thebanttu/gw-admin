@@ -1,6 +1,6 @@
 [Unit]
 After=bearerbox.service
-Description=Start Sqlbox
+Description=Sqlbox
 
 [Service]
 EnvironmentFile=-/etc/default/kannel
