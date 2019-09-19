@@ -2,7 +2,7 @@
 
 . /root/gw_admin/gw
 
-output=
+output= pidfiles=
 
 process_return()
 {
@@ -19,6 +19,7 @@ process_return()
 	if [[ $ret -eq 0 ]]
 	then
 		sleep $intv
+        pidfiles="${pidfiles}${output} "
 	else
 		echo "$output" >&2
 		exit 2
@@ -29,3 +30,14 @@ output=$(startsqlbox 2>&1)
 process_return $? 0.2 "$output"
 output=$(startsqlbox resend 2>&1)
 process_return $? 0 "$output"
+
+pidfiles=$(sed 's/.$//' <<< "$pidfiles")
+
+while true
+do
+    for pid in "$pidfiles"
+    do
+        kill -0 $(cat $pid) 2>/dev/null
+        [ $? -ne 0 ] && exit 1
+    done
+done

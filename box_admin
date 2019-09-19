@@ -159,6 +159,7 @@ box_start()
               --min-delay $RUN_BOX_MIN_DELAY \
               $(awk '{print $1}' <<< $exe) -- \
               $(awk '{print $2}' <<< $exe)
+    [ $? -eq 0 ] && echo $PIDFILE
 }
 
 # Start Box with parachute.
