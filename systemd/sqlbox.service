@@ -8,7 +8,8 @@ Type=simple
 ExecStartPre=-/usr/local/scripts/gateway/admin/stop/sqlbox.sh
 ExecStart=-/usr/local/scripts/gateway/admin/start/sqlbox.sh
 ExecStop=/usr/local/scripts/gateway/admin/stop/sqlbox.sh
-# ExecReload=/usr/local/scripts/gateway/admin/reload/sqlbox.sh
+RestartForceExitStatus=11
+ExecReload=/usr/local/scripts/gateway/admin/reload/sqlbox.sh
 Restart=always
 RestartSec=10
 

@@ -531,8 +531,42 @@ box_send_signal()
     eval $BINDIR/$START_STOP_DAEMON \
          --stop \
          --signal $sig \
-         --exec $instance \
          --pid $PIDFILE
+    IFS="$save_ifs"
+}
+
+# Send signal to (b)box
+box_send_signal_all()
+{
+    local PIDFILE= suffix= save_ifs= box= exe= instance= sig=
+    save_ifs=$IFS
+    sig=$(signal_passed "$@")
+    signal_valid $sig || return $?
+    box=$(box_args "$@")
+    box_valid $box || return $?
+    exe=$(box_exec_get "$box")
+    [[ -z $exe ]] && return 2
+    # for ((i=$(wc -l <<< "$exe"); i>0; i--)) do
+    IFS=$'\n'
+    PIDFILE=$RUNDIR/$box.pid
+    for instance in $exe
+    do
+        [[ $box =~ ${box_regexes[aux_box]} ]] && \
+            suffix=$(awk -F/ '{print $NF}' \
+                         <<< $instance |\
+                         sed -e 's/\..*//' \
+                             -e "s/$box//" \
+                             -e 's/^[^a-zA-Z]*//' \
+                             -e 's/\n//'
+                  )
+        [[ -n $suffix ]] && \
+            PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' <<< "$PIDFILE")
+		eval $BINDIR/$START_STOP_DAEMON \
+			 --stop \
+			 --signal $sig \
+			 --pid $PIDFILE
+    done
+	# --exec $instance \
     IFS="$save_ifs"
 }
 
