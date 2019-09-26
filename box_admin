@@ -848,8 +848,8 @@ install_gw()
         sqlbox_install && smppbox_install && \
         launch_config $CONF_TARBALL
     # Handle systemd and logrotate
-    edit_logrotate_config
     __copy_logrotate_config
+    edit_logrotate_config
     __copy_admin_scripts
     __copy_env_file
     for box in \
@@ -926,7 +926,7 @@ edit_config_dir()
 
 edit_logrotate_config()
 {
-    local search=testing config=$gw_admin_root/logrotate/kannel
+    local search=testing config=/etc/logrotate.d/kannel
     sed -i "s:"\\"(/"\\")$search"\\"(/"\\"):"\\"1$GW_NAME"\\"2:g" \
         $config
 }

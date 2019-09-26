@@ -5,8 +5,8 @@ if [[ ! $gateway_name =~ ^\ *$ ]]
 then
     source $HOME/gw_admin/gw
     source $HOME/gw_admin/gw_commands
-    edit_logrotate_config
     __copy_logrotate_config
+    edit_logrotate_config
     __copy_admin_scripts
     __copy_env_file
     for box in \
