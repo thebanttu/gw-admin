@@ -8,9 +8,13 @@
 GW_NAME=$gateway_name
 
 # ---- Current Working Directory
-[[ $(dirname $BASH_SOURCE) = '.' ]] &&
-    GW_ADMIN_CWD=$(pwd) || \
-    GW_ADMIN_CWD=$(pwd)/$(sed 's:^\./::' <<< $(dirname $BASH_SOURCE))
+temp_cwd=$(dirname $BASH_SOURCE)
+[[ $temp_cwd = '.' ]] && GW_ADMIN_CWD=$(pwd) || {
+		[[ $temp_cwd =~ '^\.' ]] && \
+			GW_ADMIN_CWD=$(pwd)/$(sed 's:^\./::' <<< $temp_cwd) || \
+			GW_ADMIN_CWD=$temp_cwd
+	}
+unset -v temp_cwd
 
 # ---- Needed in check_pkgs
 declare -A os_pkgs=(
