@@ -1,26 +1,54 @@
-These are a bunch of scripts to administer the Gateway otherwise known as the Kannel WAP/SMS Gateway.
+These are a bunch of scripts and configs to administer the Gateway
+otherwise known as the Kannel WAP/SMS Gateway.
 
 ./
-box_admin - Gateway administration plumbing shell functions.
-gw - Gateway startup shell functions.
-gw_commands - Shell wrapper functions for the gateway's http administration verbs.
-gw_vars - The Gateway environment is defined here.
-gw_config.tar.gz - Configuration starter pack.
-
-./systemd/
-gw_start.service - Systemd service definition template [ It works but is open for improvement. ]
+    * box_admin - Gateway administration plumbing shell functions.
+    * gw - Gateway startup shell functions.
+    * gw_commands - Shell wrapper functions for the gateway's http
+      administration verbs.
+    * gw_vars - The Gateway environment is defined here.
+    * gw_config.tar.gz - Configuration starter pack.
 
 ./admin/
-start_gateway.sh - This is what systemd uses to start the gateway.
-stop_gateway.sh - This is what systemd uses to stop the gateway.
-reload_gateway - Send HUP to bearerbox to get it to reread configs.
-panic_routine - Exectuted by parachute watcher process after bbox child fails or dies.
+    Systemd uses these scripts to start/stop/reload the box named by the file
+    name.
+    ./admin/start
+        ** bearerbox.sh - Start bearerbox.
+        ** smsbox.sh - Start smsbox.
+        ** sqlbox.sh - Start sqlbox.
+    ./admin/stop
+        ** bearerbox.sh - Stop bearerbox.
+        ** smsbox.sh - Stop smsbox.
+        ** sqlbox.sh - Stop sqlbox.
+    ./admin/reload
+        ** bearerbox.sh - Reload bearerbox.
+        ** smsbox.sh - Reload smsbox.
+        ** sqlbox.sh - Reload sqlbox.
+    * panic_routine - Exectuted by parachute watcher process after bbox child
+      fails or dies.
+
+./logrotate/
+    * kannel - Logrotate config for kannel logs.
 
 ./snippets
-bashrc.snip - Snippet of shell to inject into the bashrc file.
+    * bashrc.snip - Snippet of shell to inject into the bashrc file.
 
+./systemd/
+    Systemd related config miscellany.
+    ./systemd/env
+        ** kannel - Systemd environment file that holds some variable
+           definitions.
+    * bearerbox.service - Service definition template for bearerbox.
+    * smsbox.service - Service definition template for smsbox.
+    * sqlbox.service - Service definition template for sqlbox.
+    * gw_start.service - Service definition template for the gateway.
+      [ Deprecated ]
+    * test_gw_systemd_infection - Script to test if systemd service files
+      have been well copied (infected).
+
+## Bootstrap instructions.
 On cloning the repo onto a fresh server.
-cd into it and run:
+cd into it ("it" being the directory you elected to clone into) and run:
     . gw
 This shall first ask you for your preferred gateway_name, please provide it.
 The gateway admin functions and functionality shall then be loaded into your
