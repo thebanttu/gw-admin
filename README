@@ -47,10 +47,23 @@ otherwise known as the Kannel WAP/SMS Gateway.
       have been well copied (infected).
 
 ## Bootstrap instructions.
-On cloning the repo onto a fresh server.
-cd into it ("it" being the directory you elected to clone into) and run:
-    . gw
-This shall first ask you for your preferred gateway_name, please provide it.
-The gateway admin functions and functionality shall then be loaded into your
-environment while also having your .bashrc edited to have this happen each time
-you log in as the current user.
+    On cloning the repo onto a fresh server.
+    cd into it ("it" being the directory you elected to clone into) and run:
+        . gw
+        install_gw
+    This shall first ask you for your preferred gateway_name, please provide it.
+    The gateway admin functions and functionality shall then be loaded into your
+    environment while also having your .bashrc edited to have this happen each time
+    you log in as the current user.
+
+## To start the gateway:
+    systemctl start bearerbox smsbox sqlbox
+
+    Individual boxes can be started on their own by specifying each box in turn
+    with the systemctl start command.
+
+## To stop the gateway:
+    systemctl stop bearerbox smsbox sqlbox
+
+    Individual boxes can be stopped on their own by specifying each box in turn
+    with the systemctl stop command.
