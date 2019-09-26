@@ -1399,6 +1399,15 @@ __infect_bashrc()
 
 # It seems like a better idea to use rsync instead of cp.
 # I suspect rsync is a bit more portable too.
+__copy_logrotate_config()
+{
+    local src_dir=$gw_admin_root/logrotate
+    local target_dir=/etc/logrotate.d
+    [ -d $target_dir ] || \
+        mkdir -p $target_dir
+    yes | cp -ru $src_dir/kannel $target_dir > /dev/null 2>&1
+}
+
 __copy_admin_scripts()
 {
     local src_dir=$gw_admin_root/admin

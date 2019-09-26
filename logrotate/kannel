@@ -1,0 +1,20 @@
+/var/log/kannel/wad-digital/*.log {
+    daily
+    size 120M
+    rotate 7
+    compress
+    olddir /var/log/archive/gw
+    createolddir 644 root root
+    dateext
+    dateformat _%Y%m%d
+    dateyesterday
+    missingok
+    notifempty
+    extension .log
+    sharedscripts
+    postrotate
+        /bin/systemctl reload bearerbox
+        /bin/systemctl reload smsbox
+        /bin/systemctl reload sqlbox
+    endscript
+}
