@@ -37,7 +37,6 @@ find \
     \) \
     -ls
 
-systemctl enable bearerbox smsbox sqlbox
-systemctl start bearerbox smsbox sqlbox
-systemctl status bearerbox smsbox sqlbox
-
+# systemctl enable bearerbox smsbox sqlbox
+# systemctl start bearerbox smsbox sqlbox
+# systemctl status bearerbox smsbox sqlbox
