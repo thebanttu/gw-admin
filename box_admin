@@ -137,17 +137,6 @@ box_start()
     PIDFILE=$RUNDIR/$box.pid
     [[ -n $suffix ]] && PIDFILE=$(sed 's/\(\.pid\)/_'$suffix'\1/' \
 				      <<< "$PIDFILE")
-    # /opt/gw/kannel/sbin/start-stop-daemon \
-    #   --start \
-    #   --quiet \
-    #   --chuid kannel \
-    #   --pidfile /var/run/kannel/smsbox.pid \
-    #   --exec \
-    #       /opt/gw/kannel/sbin/run_kannel_box -- \
-    #         --pidfile /var/run/kannel/smsbox.pid \
-    #         --min-delay 15 \
-    #       /opt/gw/kannel/sbin/smsbox -- /etc/kannel/$GW_NAME/kannel.conf
-
     eval $BINDIR/$START_STOP_DAEMON \
          --start \
          --quiet \
@@ -516,11 +505,10 @@ box_send_signal()
     PIDFILE=$RUNDIR/$box.pid
     if [[ $(wc -l <<< "$exe") -gt 1 ]]; then
         select instance in $exe; do
-            # instance=$(sed -n ${i}p <<< "$exe")
             suffix=$(awk -F/ '{print $NF}' \
                          <<< $instance |\
                          sed -e 's/\..*//' \
-			     -e "s/$box//" \
+							 -e "s/$box//" \
                              -e 's/^[^a-zA-Z]*//' \
                              -e 's/\n//'
                   )
@@ -864,21 +852,21 @@ edit_config_dir()
 {
     local conf_dir= search=
     { [[ $# -le 0 ]] || [[ ! -d $1 ]]; } && {
-	echo edit_config_dir requires an argument, a valid config dir \
-	     An optional 2nd argument can be supplied, this shall be \
-	     used as the search word. >&2
-	return 2
+		echo edit_config_dir requires an argument, a valid config dir \
+			 An optional 2nd argument can be supplied, this shall be \
+			 used as the search word. >&2
+		return 2
     } || {
-	[[ -n $2 ]] &&  search=$2 || search=testing
-	conf_dir=$1
+		[[ -n $2 ]] &&  search=$2 || search=testing
+		conf_dir=$1
     }
     grep \
-	-lri \
-	--exclude=.[^.]* \
-	$search \
-	$conf_dir |\
-	xargs \
-	    sed -i "s:"\\"(/"\\")$search"\\"(/"\\"):"\\"1$GW_NAME"\\"2:g"
+	  -lri \
+	  --exclude=.[^.]* \
+	  $search \
+	  $conf_dir |\
+	  xargs \
+	      sed -i "s:"\\"(/"\\")$search"\\"(/"\\"):"\\"1$GW_NAME"\\"2:g"
 }
 
 get_store_type()
