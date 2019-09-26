@@ -1,8 +1,13 @@
 #!/bin/bash
 
-[[ $(dirname $BASH_SOURCE) = '.' ]] &&
-    gw_admin_root=$(pwd) || \
-    gw_admin_root=$(pwd)/$(sed 's:^\./::' <<< $(dirname $BASH_SOURCE))
+temp_cwd=$(dirname $BASH_SOURCE)
+[[ $temp_cwd = '.' ]] && gw_admin_root=$(pwd) || {
+		[[ $temp_cwd =~ '^\.' ]] && \
+			gw_admin_root=$(pwd)/$(sed 's:^\./::' <<< $temp_cwd) || \
+			gw_admin_root=$temp_cwd
+	}
+unset -v temp_cwd
+
 . $gw_admin_root/gw_vars
 # Sanity Check(s)
 
