@@ -4,4 +4,4 @@ output=
 cd /root/gw_admin
 . gw
 
-box_send_signal bearerbox HUP
+box_send_signal_all sqlbox HUP

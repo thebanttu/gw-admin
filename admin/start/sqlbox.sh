@@ -37,7 +37,7 @@ while true
 do
     for pid in "$pidfiles"
     do
-        kill -0 $(cat $pid) 2>/dev/null
+        kill -0 $(cat $pid 2>/dev/null) 2>/dev/null
         [ $? -ne 0 ] && break 2
     done
     sleep 10
