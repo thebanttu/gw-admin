@@ -843,9 +843,22 @@ install_bison()
 install_gw()
 {
     check_user && check_gw_dir && check_log_path && \
-        check_run_path && check_spool_dir && \
-        handle_pkgs && gw_install && sqlbox_install && \
-        smppbox_install && launch_config $CONF_TARBALL
+        check_access_log_path && check_run_path && \
+        check_spool_dir && handle_pkgs && gw_install && \
+        sqlbox_install && smppbox_install && \
+        launch_config $CONF_TARBALL
+    # Handle systemd and logrotate
+    edit_logrotate_config
+    __copy_logrotate_config
+    __copy_admin_scripts
+    __copy_env_file
+    for box in \
+        bearerbox \
+        smsbox \
+        sqlbox
+    do
+        __systemd_enable_box $box
+    done
 }
 
 uninstall_gw()
@@ -887,6 +900,7 @@ launch_config()
     conf_dir=$(prep_config_target)
     tar xC $conf_dir -f $conf_tarball
     edit_config_dir $conf_dir
+    edit_logrotate_config
 }
 
 edit_config_dir()
@@ -908,6 +922,13 @@ edit_config_dir()
 	  $conf_dir |\
 	  xargs \
 	      sed -i "s:"\\"(/"\\")$search"\\"(/"\\"):"\\"1$GW_NAME"\\"2:g"
+}
+
+edit_logrotate_config()
+{
+    local search=testing config=$gw_admin_root/logrotate/kannel
+    sed -i "s:"\\"(/"\\")$search"\\"(/"\\"):"\\"1$GW_NAME"\\"2:g" \
+        $config
 }
 
 get_store_type()
@@ -1322,6 +1343,19 @@ check_log_path()
         chown $GW_USER $LOGDIR 2>/dev/null
         [ $? -eq 0 ] || {
             echo Need permissions to change ${LOGDIR}\'s owner. >&2
+            return 5
+        }
+    }
+}
+
+check_access_log_path()
+{
+    local path=$LOGDIR/access
+    [ -d $path ] || {
+        mkdir -p $path
+        chown $GW_USER $path 2>/dev/null
+        [ $? -eq 0 ] || {
+            echo Need permissions to change ${path}\'s owner. >&2
             return 5
         }
     }

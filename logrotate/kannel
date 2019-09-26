@@ -1,7 +1,7 @@
-/var/log/kannel/wad-digital/*.log {
+/var/log/kannel/testing/*.log {
     daily
     size 120M
-    rotate 7
+    rotate 3
     compress
     olddir /var/log/archive/gw
     createolddir 644 root root
@@ -16,5 +16,24 @@
         /bin/systemctl reload bearerbox
         /bin/systemctl reload smsbox
         /bin/systemctl reload sqlbox
+    endscript
+}
+
+/var/log/kannel/testing/access/*.log {
+    daily
+    size 120M
+    rotate 14
+    compress
+    olddir /var/log/archive/gw/access
+    createolddir 644 root root
+    dateext
+    dateformat _%Y%m%d
+    dateyesterday
+    missingok
+    notifempty
+    extension .log
+    sharedscripts
+    postrotate
+        /bin/systemctl reload bearerbox
     endscript
 }
