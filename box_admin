@@ -1,6 +1,8 @@
 #!/bin/bash
 
-gw_admin_root=$(dirname $BASH_SOURCE)
+[[ $(dirname $BASH_SOURCE) = '.' ]] &&
+    gw_admin_root=$(pwd) || \
+    gw_admin_root=$(pwd)/$(sed 's:^\./::' <<< $(dirname $BASH_SOURCE))
 . $gw_admin_root/gw_vars
 # Sanity Check(s)
 
