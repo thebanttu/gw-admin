@@ -1353,7 +1353,7 @@ check_access_log_path()
     local path=$LOGDIR/access
     [ -d $path ] || {
         mkdir -p $path
-        chown $GW_USER $path 2>/dev/null
+        chown $GW_USER.$GW_USER $path 2>/dev/null
         [ $? -eq 0 ] || {
             echo Need permissions to change ${path}\'s owner. >&2
             return 5
