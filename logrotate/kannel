@@ -24,8 +24,9 @@
     size 120M
     rotate 14
     compress
+    copytruncate
     olddir /var/log/archive/gw/access
-    createolddir 644 root root
+    createolddir 664 kannel root
     dateext
     dateformat _%Y%m%d
     dateyesterday
