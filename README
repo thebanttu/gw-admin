@@ -24,6 +24,9 @@ otherwise known as the Kannel WAP/SMS Gateway.
         ** bearerbox.sh - Reload bearerbox.
         ** smsbox.sh - Reload smsbox.
         ** sqlbox.sh - Reload sqlbox.
+    ./admin/watchers
+        ** watch_sqlbox_queues.sh - Template for checking sqlbox queues.
+           exits 0 for OK and 1 for NOK.
     * panic_routine - Exectuted by parachute watcher process after bbox child
       fails or dies.
 

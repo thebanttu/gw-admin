@@ -1447,7 +1447,7 @@ __copy_admin_scripts()
     local src_dir=$gw_admin_root/admin
     [ -d $TARGET_SCRIPT_DIR ] || \
         mkdir -p $TARGET_SCRIPT_DIR
-    yes | cp -ru $src_dir/{start,stop,reload} $TARGET_SCRIPT_DIR > /dev/null 2>&1
+    yes | cp -ru $src_dir/{start,stop,reload,watchers} $TARGET_SCRIPT_DIR > /dev/null 2>&1
 }
 
 __copy_env_file()
