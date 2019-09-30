@@ -8,7 +8,7 @@ log_file=/var/log/scripts/watchers/sqlbox_queue.log
 db='mysql -usms_gateway_user -pjumbe -hpr-db-1'
 dbchk=$(
     sed -e 's:mysql:&admin ping:' \
-        -e 's:$: > /dev/null 2>\&1' \
+        -e 's:$: > /dev/null 2>\&1:' \
         <<< "$db"
 )
 
