@@ -40,35 +40,39 @@ check_tmp_dir
 check_log_dir
 
 eval "$dbchk"
-[ $? -eq 0 ] && \
-output=$(echo '
-    select 
-        concat(
-          (select ifnull(min(sql_id),0) from gateway.send_sms), ":",
-          (select count(*) from gateway.send_sms)
-        ) send_sms,
-        concat(
-          (select ifnull(min(sql_id),0) from gateway.send_sms_retries), ":",
-          (select count(*) from gateway.send_sms_retries)
-        ) retries,
-        concat(
-          (select ifnull(min(sql_id),0) from gateway.send_sms_priority), ":",
-          (select count(*) from gateway.send_sms_priority)
-        ) priorities,
-        concat(
-          (select ifnull(min(sql_id),0) from gateway.send_sms_dlr), ":",
-          (select count(*) from gateway.send_sms_dlr)
-        ) dlr
-    \G' | $db | sed 1d | tr -d '[\t ]'
-) || {
-echo DB Access denied. >&2
-exit 2
+[ $? -eq 0 ] && {
+    awk 'END{print strftime("%Y-%m-%d %H:%M:%S"), "-- Mysql check OK." >> '\"$log_file\"'}' /dev/null
+    output=$(echo '
+        select 
+            concat(
+              (select ifnull(min(sql_id),0) from gateway.send_sms), ":",
+              (select count(*) from gateway.send_sms)
+            ) send_sms,
+            concat(
+              (select ifnull(min(sql_id),0) from gateway.send_sms_retries), ":",
+              (select count(*) from gateway.send_sms_retries)
+            ) retries,
+            concat(
+              (select ifnull(min(sql_id),0) from gateway.send_sms_priority), ":",
+              (select count(*) from gateway.send_sms_priority)
+            ) priorities,
+            concat(
+              (select ifnull(min(sql_id),0) from gateway.send_sms_dlr), ":",
+              (select count(*) from gateway.send_sms_dlr)
+            ) dlr
+        \G' | $db | sed 1d | tr -d '[\t ]'
+    )
+} || {
+        echo DB Access denied. >&2
+        awk 'END{print strftime("%Y-%m-%d %H:%M:%S"), "-- Mysql check NOK." >> '\"$log_file\"'}' /dev/null
+        exit 2
 }
 
 # Debug.
 # echo "$output" >&2
 
 [ -e $tmp_file ] && {
+    awk 'END{print strftime("%Y-%m-%d %H:%M:%S"), "-- tmp file check OK." >> '\"$log_file\"'}' /dev/null
     awk '
     BEGIN {
         # Load lines from last run for comparison.
@@ -109,8 +113,11 @@ exit 2
     ext=$?
     # Empty the save file, obviously.
     truncate -s 0 "$tmp_file"
-} || \
+} || {
+    awk 'END{print strftime("%Y-%m-%d %H:%M:%S"), "-- tmp file check NOK." >> '\"$log_file\"'}' /dev/null
     echo "$tmp_file" does not exist, yet. >&2
+    exit 3
+}
 
 # Dump current run's output into the file.
 echo "$output" > "$tmp_file"
