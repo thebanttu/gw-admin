@@ -1,4 +1,5 @@
-/var/log/kannel/testing/*.log {
+/var/log/kannel/testing/bearerbox.log
+{
     daily
     size 120M
     rotate 3
@@ -11,11 +12,8 @@
     missingok
     notifempty
     extension .log
-    sharedscripts
     postrotate
         /bin/systemctl reload bearerbox
-        /bin/systemctl reload smsbox
-        /bin/systemctl reload sqlbox
     endscript
 }
 
@@ -36,5 +34,62 @@
     sharedscripts
     postrotate
         /bin/systemctl reload bearerbox
+    endscript
+}
+
+/var/log/kannel/testing/smscs/*.log
+{
+    daily
+    size 120M
+    rotate 3
+    compress
+    olddir /var/log/archive/gw
+    createolddir 644 root root
+    dateext
+    dateformat _%Y%m%d
+    dateyesterday
+    missingok
+    notifempty
+    extension .log
+    postrotate
+        /bin/systemctl reload bearerbox
+    endscript
+}
+
+/var/log/kannel/testing/sqlbox/*.log
+{
+    daily
+    size 100M
+    rotate 5
+    compress
+    olddir /var/log/archive/gw
+    createolddir 644 root root
+    dateext
+    dateformat _%Y%m%d
+    dateyesterday
+    missingok
+    notifempty
+    extension .log
+    postrotate
+        /bin/systemctl reload sqlbox
+    endscript
+}
+
+/var/log/kannel/testing/smsbox.log
+{
+    daily
+    size 100M
+    rotate 5
+    compress
+    olddir /var/log/archive/gw
+    createolddir 644 root root
+    dateext
+    dateformat _%Y%m%d
+    dateyesterday
+    missingok
+    notifempty
+    extension .log
+    postrotate
+        /bin/systemctl reload smsbox
     endscript
 }

@@ -1335,8 +1335,9 @@ check_gw_dir()
 check_log_path()
 {
     [ -d $LOGDIR ] || {
-        mkdir -p $LOGDIR
-        chown $GW_USER $LOGDIR 2>/dev/null
+        mkdir -p $LOGDIR/{smscs,access,sqlbox,smppbox}
+        chown $GW_USER $LOGDIR{smscs,access,sqlbox,smppbox} \
+            2>/dev/null
         [ $? -eq 0 ] || {
             echo Need permissions to change ${LOGDIR}\'s owner. >&2
             return 5
