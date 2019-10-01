@@ -847,7 +847,6 @@ install_gw()
     smppbox_install && launch_gw_config $CONF_TARBALL
     # Handle systemd and logrotate
     __copy_logrotate_config
-    edit_logrotate_config
     __copy_admin_scripts
     __copy_env_file
     for box in \
@@ -898,7 +897,6 @@ launch_gw_config()
     conf_dir=$(prep_config_target)
     tar xC $conf_dir -f $conf_tarball
     edit_config_dir $conf_dir
-    edit_logrotate_config
 }
 
 edit_config_dir()
@@ -1438,6 +1436,7 @@ __copy_logrotate_config()
     [ -d $target_dir ] || \
         mkdir -p $target_dir
     yes | cp -ru $src_dir/kannel $target_dir > /dev/null 2>&1
+    edit_logrotate_config
 }
 
 __copy_admin_scripts()
