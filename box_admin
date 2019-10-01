@@ -842,11 +842,9 @@ install_bison()
 
 install_gw()
 {
-    check_user && check_gw_dir && check_log_path && \
-        check_access_log_path && check_run_path && \
-        check_spool_dir && handle_pkgs && gw_install && \
-        sqlbox_install && smppbox_install && \
-        launch_config $CONF_TARBALL
+    check_user && check_gw_dir && check_log_path && check_run_path && \
+    check_spool_dir && handle_pkgs && gw_install && sqlbox_install && \
+    smppbox_install && launch_gw_config $CONF_TARBALL
     # Handle systemd and logrotate
     __copy_logrotate_config
     edit_logrotate_config
@@ -890,11 +888,11 @@ prep_config_target()
     echo $conf_dir
 }
 
-launch_config()
+launch_gw_config()
 {
     local conf_tarball= conf_dir=
     [[ $# -gt 0 ]] && [[ -f $1 ]] && conf_tarball=$1 || {
-	    echo launch_config requires an argument, the config tarball >&2
+	    echo launch_gw_config requires an argument, the config tarball >&2
 	    return 2
 	}
     conf_dir=$(prep_config_target)
