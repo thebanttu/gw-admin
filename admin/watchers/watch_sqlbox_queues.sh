@@ -116,7 +116,7 @@ eval "$dbchk"
 } || {
     awk 'END{print strftime("%Y-%m-%d %H:%M:%S"), "-- tmp file check NOK." >> '\"$log_file\"'}' /dev/null
     echo "$tmp_file" does not exist, yet. >&2
-    exit 3
+    ext=3
 }
 
 # Dump current run's output into the file.
