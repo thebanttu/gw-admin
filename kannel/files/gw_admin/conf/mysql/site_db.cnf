@@ -1,0 +1,9 @@
+[client]
+host = db
+user = sms_gateway_user
+password = xxxxxxxxx
+
+[mysql]
+skip-auto-rehash
+#pager = '/usr/bin/less -n -i -S -F -X'
+prompt = "[\R:\m\_(\U)->(\d)]> "

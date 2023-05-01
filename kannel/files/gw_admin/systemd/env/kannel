@@ -1,0 +1,4 @@
+# Default Settings for kannel.
+{%- set gwname = salt['pillar.get']('kannel:data:gwname') -%}
+
+gateway_name={{ gwname }}

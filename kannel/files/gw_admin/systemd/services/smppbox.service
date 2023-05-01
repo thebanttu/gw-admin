@@ -1,0 +1,16 @@
+[Unit]
+After=bearerbox.service
+Description=Smsbox
+
+[Service]
+EnvironmentFile=-/etc/default/kannel
+Type=forking
+ExecStart=-/usr/local/scripts/gateway/admin/start/smppbox.sh
+ExecStop=/usr/local/scripts/gateway/admin/stop/smppbox.sh
+ExecReload=/usr/local/scripts/gateway/admin/reload/smppbox.sh
+LimitNOFILE=3000
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,31 @@
+# ============== Gateway Stuff ==============
+
+export gateway_name={{ salt['pillar.get']('kannel:data:gwname') }}
+if [[ ! $gateway_name =~ ^\ *$ ]]
+then
+    source /root/gw_admin/gw
+    source /root/gw_admin/gw_commands
+    __copy_logrotate_config
+    __copy_configs
+    __copy_admin_scripts
+    __copy_env_file
+    for box in \
+        bearerbox \
+        smsbox \
+        sqlbox \
+        smppbox
+    do
+        __systemd_enable_box $box
+    done
+    # Gateway Shell Env for convenience
+    export kl=/var/log/kannel/$gateway_name
+    export kc=/etc/kannel/$gateway_name
+    export ac=/var/log/kannel/$gateway_name/access/access.log
+else
+    echo Gateway Name not set in your \
+	 ~/.bashrc >&2
+fi
+
+alias gws='gw_status|less'
+
+# ===========================================

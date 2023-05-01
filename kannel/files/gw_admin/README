@@ -1,0 +1,76 @@
+These are a bunch of scripts and configs to administer the Gateway
+otherwise known as the Kannel WAP/SMS Gateway.
+
+./
+    * box_admin - Gateway administration plumbing shell functions.
+    * gw - Gateway startup shell functions.
+    * gw_commands - Shell wrapper functions for the gateway's http
+      administration verbs.
+    * gw_vars - The Gateway environment is defined here.
+    * gw_config.tar.gz - Configuration starter pack.
+
+./admin/
+    Systemd uses these scripts to start/stop/reload the box named by the file
+    name.
+    ./admin/start
+        ** bearerbox.sh - Start bearerbox.
+        ** smsbox.sh - Start smsbox.
+        ** sqlbox.sh - Start sqlbox.
+    ./admin/stop
+        ** bearerbox.sh - Stop bearerbox.
+        ** smsbox.sh - Stop smsbox.
+        ** sqlbox.sh - Stop sqlbox.
+    ./admin/reload
+        ** bearerbox.sh - Reload bearerbox.
+        ** smsbox.sh - Reload smsbox.
+        ** sqlbox.sh - Reload sqlbox.
+    ./admin/watchers
+        ** watch_sqlbox_queues.sh - Template for checking sqlbox queues.
+           exits 0 for OK and 1 for NOK.
+    * panic_routine - Exectuted by parachute watcher process after bbox child
+      fails or dies.
+
+./conf
+    Various config files.
+    ** ./conf/mysql/site_db.cnf - Mysql client config file.
+
+./logrotate/
+    * kannel - Logrotate config for kannel logs.
+
+./snippets
+    * bashrc.snip - Snippet of shell to inject into the bashrc file.
+
+./systemd/
+    Systemd related config miscellany.
+    ./systemd/env
+        ** kannel - Systemd environment file that holds some variable
+           definitions.
+    * bearerbox.service - Service definition template for bearerbox.
+    * smsbox.service - Service definition template for smsbox.
+    * sqlbox.service - Service definition template for sqlbox.
+    * gw_start.service - Service definition template for the gateway.
+      [ Deprecated ]
+    * test_gw_systemd_infection - Script to test if systemd service files
+      have been well copied (infected).
+
+## Bootstrap instructions.
+    On cloning the repo onto a fresh server.
+    cd into it ("it" being the directory you elected to clone into) and run:
+        . gw
+        install_gw
+    This shall first ask you for your preferred gateway_name, please provide it.
+    The gateway admin functions and functionality shall then be loaded into your
+    environment while also having your .bashrc edited to have this happen each time
+    you log in as the current user.
+
+## To start the gateway:
+    systemctl start bearerbox smsbox sqlbox
+
+    Individual boxes can be started on their own by specifying each box in turn
+    with the systemctl start command.
+
+## To stop the gateway:
+    systemctl stop bearerbox smsbox sqlbox
+
+    Individual boxes can be stopped on their own by specifying each box in turn
+    with the systemctl stop command.
