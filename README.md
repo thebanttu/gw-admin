@@ -18,18 +18,18 @@ I suggest ~/cm/gw but that's a matter of preference (or taste).
 This goes without saying.
 
 ## Install salt
-`curl -o bootstrap-salt.sh -L https://bootstrap.saltproject.io  
- sudo sh bootstrap-salt.sh git master`
+`curl -o bootstrap-salt.sh -L https://bootstrap.saltproject.io`
+`sudo sh bootstrap-salt.sh git master`
 
 ## Make the salt minion execute local states
 `sed -i '/^#\s*file_client:/s/.*/file_client: local/' /etc/salt/minion`
 
 ## Make salt aware of the kannel salt state and pillar
-`here=$(pwd)<br>
- mkdir -p /srv/{salt,pillar}  
- ln -svf ${here}/kannel /srv/salt/kannel  
- ln -svf ${here}/pillar /srv/pillar/kannel  
- unset -v here`
+`here=$(pwd)`
+`mkdir -p /srv/{salt,pillar}`
+`ln -svf ${here}/kannel /srv/salt/kannel`
+`ln -svf ${here}/pillar /srv/pillar/kannel`
+`unset -v here`
 
 ## Stop the salt-minion
 `systemctl stop salt-minion`
