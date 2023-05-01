@@ -4,9 +4,9 @@ Over the years I have used this hodgepodge of scripts to various degrees of
 success to "install" and manage the kannel messaging gateway as stated on the
 tin.
 
-The install part of it was always hit and miss and so succumbed to the pressure
-to adopt configuration management to smooth over the bumps that I was running
-into trying to reliably install a working and configured gateway.
+The install part of it was always hit and miss. I have therefore succumbed to
+the pressure to adopt configuration management to smooth over the bumps that I
+was running into trying to reliably install a working and configured gateway.
 
 I went with saltstack and that is what this branch is, a salt state to install
 and configure the gateway to a working minimum.
@@ -17,8 +17,9 @@ I suggest ~/cm/gw but that's a matter of preference (or taste).
 ## Checkout the salt-gw-admin branch
 This goes without saying.
 
-## Install the salt
-```curl -o bootstrap-salt.sh -L https://bootstrap.saltproject.io && sudo sh bootstrap-salt.sh git master```
+## Install salt
+```curl -o bootstrap-salt.sh -L https://bootstrap.saltproject.io
+   sudo sh bootstrap-salt.sh git master```
 
 ## Make the salt minion execute local states
 ```sed -i '/^#\s*file_client:/s/.*/file_client: local/' /etc/salt/minion```
@@ -38,5 +39,4 @@ everywhere on linux and that is usually the target system for running the
 gateway.
 
 ## Apply the salt state
-
 ```salt-call --local state.apply kannel```
