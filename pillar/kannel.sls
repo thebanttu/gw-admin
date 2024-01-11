@@ -29,7 +29,7 @@ kannel:
     gw_svn_url: https://svn.kannel.org/gateway/trunk
     bison_src_url: https://ftp.gnu.org/gnu/bison/bison-2.7.tar.gz
     mysql:
-      username: grandadmin
-      password: )TGCJ93DhFSVb,-0eB-M72!Xc$M89f
+      username: {{ key "gw/kannel/db/user" }}
+      password: {{ key "gw/kannel/db/pass" }}
       host: 127.0.0.1
       db: gw
